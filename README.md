@@ -15,9 +15,9 @@ Key features:
 ## Installation
 
 ```bash
-npm install query-state
+npm install querystate
 # or
-yarn add query-state
+yarn add querystate
 ```
 
 ## Usage
@@ -25,7 +25,7 @@ yarn add query-state
 ### Basic Example
 
 ```tsx
-import { useQueryState } from 'query-state'
+import { useQueryState } from 'querystate'
 import { Select } from 'antd'
 
 function FilterPanel() {
