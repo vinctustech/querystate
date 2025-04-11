@@ -1,12 +1,39 @@
 import { useState } from 'react'
-import { Button, Card } from 'antd'
+import { Select, Card, Space } from 'antd'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [sel1, setSel1] = useState()
+  const [sel2, setSel2] = useState()
 
   return (
     <Card>
-      <Button onClick={() => setCount((count) => count + 1)}>count is {count}</Button>
+      <Space>
+        <Select
+          placeholder="sel1"
+          allowClear
+          style={{ width: 120 }}
+          value={sel1}
+          onChange={setSel1}
+          options={[
+            { value: 'a', label: 'a' },
+            { value: 'b', label: 'b' },
+            { value: 'c', label: 'c' },
+          ]}
+        ></Select>
+        <Select
+          mode="multiple"
+          placeholder="sel2"
+          allowClear
+          style={{ width: 120 }}
+          value={sel2}
+          onChange={setSel2}
+          options={[
+            { value: 'a', label: 'a' },
+            { value: 'b', label: 'b' },
+            { value: 'c', label: 'c' },
+          ]}
+        ></Select>
+      </Space>
     </Card>
   )
 }
