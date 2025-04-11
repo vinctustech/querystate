@@ -1,8 +1,6 @@
-// useQueryState.ts
 import { useSearchParams } from 'react-router-dom'
 import { useMemo } from 'react'
 
-// Define type literals
 type ParamType = 'single' | 'array'
 type ParamSchema = {
   [key: string]: ParamType

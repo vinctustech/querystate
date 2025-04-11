@@ -1,55 +1,110 @@
-# React + TypeScript + Vite
+# QueryState
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A lightweight utility for syncing URL query parameters with React state, designed specifically for Ant Design's Select components.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+QueryState provides a simple, type-safe way to persist UI filter/view state in the URL. It's built on top of React Router's `useSearchParams` hook, with added conveniences for working with both single-value and multi-value parameters.
 
-## Expanding the ESLint configuration
+Key features:
+- Seamless integration with Ant Design's Select components
+- Support for both single-select and multi-select parameters
+- Type-safe parameter access and updates
+- Clean, declarative API
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Installation
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+npm install query-state
+# or
+yarn add query-state
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Usage
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Basic Example
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```tsx
+import { useQueryState } from 'query-state'
+import { Select } from 'antd'
+
+function FilterPanel() {
+  // Define parameters and their types
+  const { category, setCategory, tags, setTags } = useQueryState({
+    category: 'single',  // Single value parameter
+    tags: 'array'        // Multi-value parameter
+  })
+
+  return (
+    <div>
+      {/* Single-select component */}
+      <Select 
+        placeholder="Select category"
+        value={category}
+        onChange={setCategory}
+        options={[
+          { value: '123e4567-e89b-12d3-a456-426614174000', label: 'Electronics' },
+          { value: '223e4567-e89b-12d3-a456-426614174001', label: 'Books' }
+        ]}
+      />
+
+      {/* Multi-select component */}
+      <Select
+        mode="multiple"
+        placeholder="Select tags"
+        value={tags}
+        onChange={setTags}
+        options={[
+          { value: '523e4567-e89b-12d3-a456-426614174004', label: 'New' },
+          { value: '623e4567-e89b-12d3-a456-426614174005', label: 'Sale' }
+        ]}
+      />
+    </div>
+  )
+}
 ```
-# querystate
+
+### URL Format
+
+QueryState generates URL parameters that correctly represent both single and multiple values:
+
+- Single values: `?category=123e4567-e89b-12d3-a456-426614174000`
+- Multiple values: `?tags=523e4567-e89b-12d3-a456-426614174004&tags=623e4567-e89b-12d3-a456-426614174005`
+
+This format ensures compatibility with server-side processing and proper bookmarking behavior.
+
+## API Reference
+
+### useQueryState
+
+```tsx
+function useQueryState<T extends ParamSchema>(schema: T): QueryStateResult<T>
+```
+
+#### Parameters
+
+- `schema`: An object mapping parameter names to their types (`'single'` or `'array'`)
+
+#### Returns
+
+An object containing:
+- A property for each parameter with its current value
+    - `single` parameters return `string | undefined`
+    - `array` parameters return `string[]` (empty array if no values)
+- A setter function for each parameter with the naming convention `setParameterName`
+
+## Why QueryState?
+
+- **URL Persistence**: Users can bookmark, share, or refresh pages while preserving their filter selections
+- **Clean Type Interface**: Automatically handles the type differences between single and multi-select components
+- **Optimized for Ant Design**: Works perfectly with Ant Design's Select components out of the box
+
+## Requirements
+
+- React 16.8+ (Hooks support)
+- React Router 6+
+- TypeScript 4.7+ (recommended)
+
+## License
+
+ISC
