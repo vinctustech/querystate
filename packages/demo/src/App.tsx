@@ -1,5 +1,5 @@
 import { Select, Card, Space, Divider, Typography } from 'antd'
-import { useQueryState } from './useQueryState'
+import { useQueryState } from 'querystate/src/useQueryState.ts'
 
 const { Title, Text } = Typography
 
