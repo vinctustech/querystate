@@ -20,11 +20,8 @@ function App() {
             placeholder="Select a category"
             allowClear
             style={{ width: 300 }}
-            value={queryState.category.value || undefined}
-            onChange={(value) => {
-              console.log(JSON.stringify(value))
-              queryState.category.setValue(value || '')
-            }}
+            value={queryState.category.value}
+            onChange={(value) => queryState.category.setValue(value)}
             options={[
               { value: '123e4567-e89b-12d3-a456-426614174000', label: 'Electronics' },
               { value: '223e4567-e89b-12d3-a456-426614174001', label: 'Books' },
@@ -64,7 +61,7 @@ function App() {
         <div>
           <Title level={4}>Parameter Values:</Title>
           <Space direction="vertical">
-            <Text>Category: {queryState.category.value || '(none)'}</Text>
+            <Text>Category: {queryState.category.value ?? '(none)'}</Text>
             <Text>
               Tags:{' '}
               {queryState.tags.value.length > 0 ? JSON.stringify(queryState.tags.value) : '(none)'}

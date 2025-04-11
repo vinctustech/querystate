@@ -1,6 +1,6 @@
 // useQueryState.ts
 import { useSearchParams } from 'react-router-dom'
-import { useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
 
 // Define our schema type
 type ParamSchema = {
@@ -14,11 +14,11 @@ type QueryStateResult<T extends ParamSchema> = {
   [K in keyof T]: T[K]['type'] extends 'array'
     ? {
         value: string[]
-        setValue: (value: string[]) => void
+        setValue: (value: string[] | undefined) => void
       }
     : {
-        value: string
-        setValue: (value: string) => void
+        value: string | undefined
+        setValue: (value: string | undefined) => void
       }
 }
 
@@ -40,31 +40,40 @@ export function useQueryState<T extends ParamSchema>(schema: T): QueryStateResul
     Object.entries(schema).forEach(([key, config]) => {
       if (config.type === 'array') {
         // Handle array parameters
-        const value = searchParams.getAll(key)
+        const values = searchParams.getAll(key)
+        const value = values.length > 0 ? values : []
 
-        const setValue = (newValue: string[]) => {
+        const setValue = (newValue: string[] | undefined) => {
           const updatedParams = new URLSearchParams(searchParams)
           // Remove all instances of this key
           updatedParams.delete(key)
-          // Add each value as a separate parameter
-          newValue.forEach((val) => {
-            updatedParams.append(key, val)
-          })
+
+          // Add each value as a separate parameter if newValue exists and has items
+          if (newValue && newValue.length > 0) {
+            newValue.forEach((val) => {
+              updatedParams.append(key, val)
+            })
+          }
+
           setSearchParams(updatedParams)
         }
 
         output[key as keyof T] = { value, setValue } as any
       } else {
         // Handle single parameters
-        const value = searchParams.get(key) || ''
+        // Return undefined instead of empty string if param doesn't exist
+        const paramValue = searchParams.get(key)
+        const value = paramValue !== null ? paramValue : undefined
 
-        const setValue = (newValue: string) => {
+        const setValue = (newValue: string | undefined) => {
           const updatedParams = new URLSearchParams(searchParams)
-          if (newValue) {
+
+          if (newValue !== undefined && newValue !== '') {
             updatedParams.set(key, newValue)
           } else {
             updatedParams.delete(key)
           }
+
           setSearchParams(updatedParams)
         }
 
