@@ -15,9 +15,7 @@ Key features:
 ## Installation
 
 ```bash
-npm install querystate
-# or
-yarn add querystate
+npm i querystate
 ```
 
 ## Usage
