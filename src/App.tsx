@@ -1,11 +1,9 @@
-// App.tsx
 import { Select, Card, Space, Divider, Typography } from 'antd'
 import { useQueryState } from './useQueryState'
 
 const { Title, Text } = Typography
 
 function App() {
-  // Define our schema for URL parameters with simplified syntax
   const { category, setCategory, tags, setTags } = useQueryState({
     category: 'single',
     tags: 'array',
@@ -30,9 +28,7 @@ function App() {
             ]}
           />
         </div>
-
         <Divider />
-
         <div>
           <Title level={4}>Multi-Select (Tags)</Title>
           <Select
@@ -50,14 +46,11 @@ function App() {
             ]}
           />
         </div>
-
         <Divider />
-
         <div>
           <Title level={4}>Current URL Parameters:</Title>
           <pre>{window.location.search}</pre>
         </div>
-
         <div>
           <Title level={4}>Parameter Values:</Title>
           <Space direction="vertical">
