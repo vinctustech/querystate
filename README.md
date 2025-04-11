@@ -15,7 +15,7 @@ Key features:
 ## Installation
 
 ```bash
-npm i querystate
+npm install querystate
 ```
 
 ## Usage
