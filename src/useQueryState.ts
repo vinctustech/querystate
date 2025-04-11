@@ -11,23 +11,25 @@ type ParamSchema = {
 
 // Define the return type based on the schema
 type QueryStateResult<T extends ParamSchema> = {
-  [K in keyof T]: T[K]['type'] extends 'array'
-    ? {
-        value: string[]
-        setValue: (value: string[] | undefined) => void
-      }
-    : {
-        value: string | undefined
-        setValue: (value: string | undefined) => void
-      }
+  [K in keyof T]: T[K]['type'] extends 'array' ? string[] : string | undefined
+} & {
+  [K in keyof T as `set${Capitalize<string & K>}`]: T[K]['type'] extends 'array'
+    ? (value: string[] | undefined) => void
+    : (value: string | undefined) => void
 }
+
+// Helper type for capitalizing the first letter of a string
+type Capitalize<S extends string> = S extends `${infer F}${infer R}` ? `${Uppercase<F>}${R}` : S
 
 /**
  * A custom hook for managing URL query parameters with support for both
  * single string values and string arrays.
  *
+ * Returns values and setters directly with a flattened API:
+ * const { param, setParam, arrayParam, setArrayParam } = useQueryState({...})
+ *
  * @param schema An object defining the parameters and their types
- * @returns An object with getters and setters for each parameter
+ * @returns An object with values and setters for each parameter
  */
 export function useQueryState<T extends ParamSchema>(schema: T): QueryStateResult<T> {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -38,6 +40,8 @@ export function useQueryState<T extends ParamSchema>(schema: T): QueryStateResul
 
     // For each parameter in the schema
     Object.entries(schema).forEach(([key, config]) => {
+      const capitalizedKey = (key.charAt(0).toUpperCase() + key.slice(1)) as Capitalize<typeof key>
+
       if (config.type === 'array') {
         // Handle array parameters
         const values = searchParams.getAll(key)
@@ -58,7 +62,9 @@ export function useQueryState<T extends ParamSchema>(schema: T): QueryStateResul
           setSearchParams(updatedParams)
         }
 
-        output[key as keyof T] = { value, setValue } as any
+        // Set the value and setter directly on the result object
+        output[key as keyof T] = value as any
+        output[`set${capitalizedKey}` as keyof QueryStateResult<T>] = setValue as any
       } else {
         // Handle single parameters
         // Return undefined instead of empty string if param doesn't exist
@@ -77,7 +83,9 @@ export function useQueryState<T extends ParamSchema>(schema: T): QueryStateResul
           setSearchParams(updatedParams)
         }
 
-        output[key as keyof T] = { value, setValue } as any
+        // Set the value and setter directly on the result object
+        output[key as keyof T] = value as any
+        output[`set${capitalizedKey}` as keyof QueryStateResult<T>] = setValue as any
       }
     })
 

@@ -5,8 +5,8 @@ import { useQueryState } from './useQueryState'
 const { Title, Text } = Typography
 
 function App() {
-  // Define our schema for URL parameters
-  const queryState = useQueryState({
+  // Define our schema for URL parameters and get values and setters directly
+  const { category, setCategory, tags, setTags } = useQueryState({
     category: { type: 'single' },
     tags: { type: 'array' },
   })
@@ -20,8 +20,8 @@ function App() {
             placeholder="Select a category"
             allowClear
             style={{ width: 300 }}
-            value={queryState.category.value}
-            onChange={(value) => queryState.category.setValue(value)}
+            value={category}
+            onChange={(value) => setCategory(value)}
             options={[
               { value: '123e4567-e89b-12d3-a456-426614174000', label: 'Electronics' },
               { value: '223e4567-e89b-12d3-a456-426614174001', label: 'Books' },
@@ -40,8 +40,8 @@ function App() {
             placeholder="Select tags"
             allowClear
             style={{ width: 300 }}
-            value={queryState.tags.value}
-            onChange={(values) => queryState.tags.setValue(values)}
+            value={tags}
+            onChange={(values) => setTags(values)}
             options={[
               { value: '523e4567-e89b-12d3-a456-426614174004', label: 'New' },
               { value: '623e4567-e89b-12d3-a456-426614174005', label: 'Sale' },
@@ -61,11 +61,8 @@ function App() {
         <div>
           <Title level={4}>Parameter Values:</Title>
           <Space direction="vertical">
-            <Text>Category: {queryState.category.value ?? '(none)'}</Text>
-            <Text>
-              Tags:{' '}
-              {queryState.tags.value.length > 0 ? JSON.stringify(queryState.tags.value) : '(none)'}
-            </Text>
+            <Text>Category: {category ?? '(none)'}</Text>
+            <Text>Tags: {tags.length > 0 ? JSON.stringify(tags) : '(none)'}</Text>
           </Space>
         </div>
       </Space>
