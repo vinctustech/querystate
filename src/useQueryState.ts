@@ -2,18 +2,17 @@
 import { useSearchParams } from 'react-router-dom'
 import { useMemo } from 'react'
 
-// Define our schema type
+// Define more concise schema types
+type ParamType = 'single' | 'array'
 type ParamSchema = {
-  [key: string]: {
-    type: 'single' | 'array'
-  }
+  [key: string]: ParamType
 }
 
 // Define the return type based on the schema
 type QueryStateResult<T extends ParamSchema> = {
-  [K in keyof T]: T[K]['type'] extends 'array' ? string[] : string | undefined
+  [K in keyof T]: T[K] extends 'array' ? string[] : string | undefined
 } & {
-  [K in keyof T as `set${Capitalize<string & K>}`]: T[K]['type'] extends 'array'
+  [K in keyof T as `set${Capitalize<string & K>}`]: T[K] extends 'array'
     ? (value: string[] | undefined) => void
     : (value: string | undefined) => void
 }
@@ -39,10 +38,10 @@ export function useQueryState<T extends ParamSchema>(schema: T): QueryStateResul
     const output = {} as QueryStateResult<T>
 
     // For each parameter in the schema
-    Object.entries(schema).forEach(([key, config]) => {
+    Object.entries(schema).forEach(([key, paramType]) => {
       const capitalizedKey = (key.charAt(0).toUpperCase() + key.slice(1)) as Capitalize<typeof key>
 
-      if (config.type === 'array') {
+      if (paramType === 'array') {
         // Handle array parameters
         const values = searchParams.getAll(key)
         const value = values.length > 0 ? values : []

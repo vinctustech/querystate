@@ -5,10 +5,10 @@ import { useQueryState } from './useQueryState'
 const { Title, Text } = Typography
 
 function App() {
-  // Define our schema for URL parameters and get values and setters directly
+  // Define our schema for URL parameters with simplified syntax
   const { category, setCategory, tags, setTags } = useQueryState({
-    category: { type: 'single' },
-    tags: { type: 'array' },
+    category: 'single',
+    tags: 'array',
   })
 
   return (
