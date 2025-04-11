@@ -1,16 +1,17 @@
 # QueryState
 
-A lightweight utility for syncing URL query parameters with React state, designed specifically for Ant Design's Select components.
+A lightweight utility that uses URL query parameters as React state, eliminating the need for `useState` when working with filterable views and Ant Design's Select components.
 
 ## Overview
 
-QueryState provides a simple, type-safe way to persist UI filter/view state in the URL. It's built on top of React Router's `useSearchParams` hook, with added conveniences for working with both single-value and multi-value parameters.
+QueryState provides a simple, type-safe way to persist UI filter/view state directly in the URL. It's built on top of React Router's `useSearchParams` hook but eliminates the need to maintain separate local state for UI components, as the URL itself becomes your state store.
 
 Key features:
+- Eliminates the need for separate React state management (`useState`) for filter components
 - Seamless integration with Ant Design's Select components
 - Support for both single-select and multi-select parameters
 - Type-safe parameter access and updates
-- Clean, declarative API
+- Automatic URL-based state persistence with no additional code
 
 ## Installation
 
@@ -27,7 +28,7 @@ import { useQueryState } from 'querystate'
 import { Select } from 'antd'
 
 function FilterPanel() {
-  // Define parameters and their types
+  // Define parameters and their types - no separate useState needed!
   const { category, setCategory, tags, setTags } = useQueryState({
     category: 'single',  // Single value parameter
     tags: 'array'        // Multi-value parameter
@@ -93,7 +94,9 @@ An object containing:
 
 ## Why QueryState?
 
-- **URL Persistence**: Users can bookmark, share, or refresh pages while preserving their filter selections
+- **URL as State**: The URL itself becomes your state store, eliminating the need for separate React state
+- **Automatic Persistence**: Filter selections are automatically preserved when sharing links, bookmarking pages, or refreshing
+- **Reduced Boilerplate**: No need to write duplicate state management code or synchronization logic
 - **Clean Type Interface**: Automatically handles the type differences between single and multi-select components
 - **Optimized for Ant Design**: Works perfectly with Ant Design's Select components out of the box
 
