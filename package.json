@@ -1,6 +1,5 @@
 {
   "name": "querystate-monorepo",
-  "private": true,
   "workspaces": [
     "packages/*"
   ],

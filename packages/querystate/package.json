@@ -1,5 +1,5 @@
 {
-  "name": "querystate",
+  "name": "@vinctus/querystate",
   "type": "module",
   "version": "0.1.0",
   "description": "URL query parameters as React state",
