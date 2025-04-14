@@ -1,20 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es2016",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "jsx": "react",
-    "module": "ESNext",
-    "declaration": true,
-    "declarationDir": "types",
-    "sourceMap": true,
-    "outDir": "dist",
+    "target": "es2017",
+    "lib": ["dom", "es2017"],
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "emitDeclarationOnly": true
+    "esModuleInterop": true,
+    "declaration": true,
+    "outDir": "dist",
+    "declarationDir": "dist/types",
+    "strict": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
