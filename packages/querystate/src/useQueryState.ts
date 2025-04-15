@@ -1,61 +1,126 @@
 import { useSearchParams } from 'react-router-dom'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
-type ParamType = 'single' | 'array'
-type ParamSchema = {
-  [key: string]: ParamType
+// Parameter type definitions
+interface StringParamConfig {
+  type: 'single'
+  defaultValue?: string
 }
 
-// Helper type for capitalizing the first letter of a string
+interface ArrayParamConfig {
+  type: 'array'
+  defaultValue?: string[]
+}
+
+type ParamConfig = StringParamConfig | ArrayParamConfig
+
+// Helper type for capitalizing first letter
 type Capitalize<S extends string> = S extends `${infer F}${infer R}` ? `${Uppercase<F>}${R}` : S
 
-// Define the return type based on the schema
-type QueryStateResult<T extends ParamSchema> = {
-  [K in keyof T]: T[K] extends 'array' ? string[] : string | undefined
+// Builder interfaces for chainable API
+interface StringParamBuilder extends StringParamConfig {
+  array(): ArrayParamBuilder
+  default(value: string): StringParamConfig
+}
+
+interface ArrayParamBuilder extends ArrayParamConfig {
+  default(value: string[]): ArrayParamConfig
+}
+
+// Define result type based on schema
+type QueryStateResult<T extends Record<string, ParamConfig>> = {
+  [K in keyof T]: T['type'] extends 'array' ? string[] : string | undefined
 } & {
-  [K in keyof T as `set${Capitalize<string & K>}`]: T[K] extends 'array'
+  [K in keyof T as `set${Capitalize<string & K>}`]: T['type'] extends 'array'
     ? (value: string[] | undefined) => void
     : (value: string | undefined) => void
 }
 
+// The queryState API with chainable methods
+export const queryState = {
+  string(): StringParamBuilder {
+    const config: StringParamConfig = { type: 'single' }
+
+    return {
+      ...config,
+      array(): ArrayParamBuilder {
+        const arrayConfig: ArrayParamConfig = { type: 'array' }
+
+        return {
+          ...arrayConfig,
+          default(value: string[]): ArrayParamConfig {
+            return { ...arrayConfig, defaultValue: value }
+          },
+        }
+      },
+      default(value: string): StringParamConfig {
+        return { ...config, defaultValue: value }
+      },
+    }
+  },
+}
+
 /**
  * A custom hook for managing URL query parameters with support for both
- * single string values and string arrays.
+ * single string values and string arrays with chainable configuration.
  *
- * Returns values and setters directly with a flattened API:
- * const { param, setParam, arrayParam, setArrayParam } = useQueryState({...})
- *
- * @param schema An object defining the parameters and their types
+ * @param schema An object defining the parameters using the queryState builder
  * @returns An object with values and setters for each parameter
  */
-export function useQueryState<T extends ParamSchema>(schema: T): QueryStateResult<T> {
+export function useQueryState<T extends Record<string, ParamConfig>>(
+  schema: T,
+): QueryStateResult<T> {
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Create the result object
+  // Apply default values if parameters aren't in the URL
+  useEffect(() => {
+    let needsUpdate = false
+    const updatedParams = new URLSearchParams(searchParams)
+
+    Object.entries(schema).forEach(([key, config]) => {
+      if (!searchParams.has(key) && config.defaultValue !== undefined) {
+        if (config.type === 'array') {
+          const arrayDefaults = config.defaultValue as string[]
+          if (arrayDefaults.length > 0) {
+            needsUpdate = true
+            arrayDefaults.forEach((val) => {
+              updatedParams.append(key, val)
+            })
+          }
+        } else {
+          needsUpdate = true
+          updatedParams.set(key, config.defaultValue as string)
+        }
+      }
+    })
+
+    if (needsUpdate) {
+      setSearchParams(updatedParams)
+    }
+  }, [])
+
+  // Create result object with values and setters
   return useMemo(() => {
-    // Initialize the result object with explicit typecasting
     const result = {} as QueryStateResult<T>
 
-    // Process each entry in the schema
-    Object.entries(schema).forEach(([key, paramType]) => {
-      const capitalizedKey = (key.charAt(0).toUpperCase() + key.slice(1)) as Capitalize<
-        string & keyof T
-      >
+    Object.entries(schema).forEach(([key, config]) => {
+      const capitalizedKey = (key.charAt(0).toUpperCase() + key.slice(1)) as Capitalize<string>
 
-      if (paramType === 'array') {
+      if (config.type === 'array') {
         // Handle array parameters
         const values = searchParams.getAll(key)
-
-        // Create typed value and setter for array type
         const arrayValue = values.length > 0 ? values : []
+
         const setArrayValue = (newValue: string[] | undefined) => {
           const updatedParams = new URLSearchParams(searchParams)
-          // Remove all instances of this key
           updatedParams.delete(key)
 
-          // Add each value as a separate parameter if newValue exists and has items
           if (newValue && newValue.length > 0) {
             newValue.forEach((val) => {
+              updatedParams.append(key, val)
+            })
+          } else if (config.defaultValue && (config.defaultValue as string[]).length > 0) {
+            ;(config.defaultValue as string[]).forEach((val) => {
               updatedParams.append(key, val)
             })
           }
@@ -63,7 +128,6 @@ export function useQueryState<T extends ParamSchema>(schema: T): QueryStateResul
           setSearchParams(updatedParams)
         }
 
-        // Type-safe assignment using explicit property access
         Object.defineProperty(result, key, {
           value: arrayValue,
           enumerable: true,
@@ -76,14 +140,15 @@ export function useQueryState<T extends ParamSchema>(schema: T): QueryStateResul
       } else {
         // Handle single parameters
         const paramValue = searchParams.get(key)
-
-        // Create typed value and setter for single type
         const singleValue = paramValue !== null ? paramValue : undefined
+
         const setSingleValue = (newValue: string | undefined) => {
           const updatedParams = new URLSearchParams(searchParams)
 
           if (newValue !== undefined && newValue !== '') {
             updatedParams.set(key, newValue)
+          } else if (config.defaultValue) {
+            updatedParams.set(key, config.defaultValue as string)
           } else {
             updatedParams.delete(key)
           }
@@ -91,7 +156,6 @@ export function useQueryState<T extends ParamSchema>(schema: T): QueryStateResul
           setSearchParams(updatedParams)
         }
 
-        // Type-safe assignment using explicit property access
         Object.defineProperty(result, key, {
           value: singleValue,
           enumerable: true,
@@ -105,5 +169,5 @@ export function useQueryState<T extends ParamSchema>(schema: T): QueryStateResul
     })
 
     return result
-  }, [searchParams, setSearchParams, schema])
+  }, [searchParams, setSearchParams])
 }
