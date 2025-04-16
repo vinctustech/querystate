@@ -1,14 +1,15 @@
 {
+  "private": true,
   "name": "querystate-monorepo",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace=querystate",
-    "dev:lib": "npm run dev --workspace=querystate",
-    "dev:demo": "npm run dev --workspace=demo",
-    "test": "npm run test --workspace=querystate",
-    "clean": "rm -rf node_modules && rm -rf packages/*/node_modules && rm -rf packages/*/dist"
+    "build": "npm run build --workspace=@vinctus/querystate",
+    "dev": "npm run dev --workspace=demo",
+    "test": "npm run test --workspace=@vinctus/querystate",
+    "clean": "rm -rf node_modules && rm -rf packages/*/node_modules && rm -rf packages/*/dist",
+    "publish": "npm publish --workspace=@vinctus/querystate --access public"
   },
   "devDependencies": {
     "typescript": "~5.7.2"

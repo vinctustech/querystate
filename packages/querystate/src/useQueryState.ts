@@ -29,9 +29,9 @@ interface ArrayParamBuilder extends ArrayParamConfig {
 
 // Define result type based on schema
 type QueryStateResult<T extends Record<string, ParamConfig>> = {
-  [K in keyof T]: T['type'] extends 'array' ? string[] : string | undefined
+  [K in keyof T]: T[K]['type'] extends 'array' ? string[] : string | undefined
 } & {
-  [K in keyof T as `set${Capitalize<string & K>}`]: T['type'] extends 'array'
+  [K in keyof T as `set${Capitalize<string & K>}`]: T[K]['type'] extends 'array'
     ? (value: string[] | undefined) => void
     : (value: string | undefined) => void
 }
