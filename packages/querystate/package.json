@@ -1,7 +1,7 @@
 {
   "name": "@vinctus/querystate",
   "type": "module",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "URL query parameters as React state",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
