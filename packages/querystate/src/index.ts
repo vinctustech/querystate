@@ -1,1 +1,1 @@
-export { useQueryState } from './useQueryState'
+export { useQueryState, queryState } from './useQueryState'
