@@ -6,11 +6,8 @@ const { Title, Text } = Typography
 function App() {
   const { category, setCategory, tags, setTags, status, setStatus, priority, setPriority } =
     useQueryState({
-      // Original parameters with new syntax
       category: queryState.string(),
       tags: queryState.string().array(),
-
-      // New parameters with default values
       status: queryState.string().default('active'),
       priority: queryState.string().array().default(['medium']),
     })
@@ -24,7 +21,6 @@ function App() {
         showIcon
         style={{ marginBottom: 16 }}
       />
-
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <div>
           <Title level={4}>Single Select (Category)</Title>
@@ -45,9 +41,7 @@ function App() {
             No default value - will be removed from URL when cleared
           </Text>
         </div>
-
         <Divider />
-
         <div>
           <Title level={4}>Multi-Select (Tags)</Title>
           <Select
@@ -68,9 +62,7 @@ function App() {
             No default value - will be removed from URL when cleared
           </Text>
         </div>
-
         <Divider />
-
         <div>
           <Title level={4}>Single Select with Default (Status)</Title>
           <Select
@@ -90,9 +82,7 @@ function App() {
             Default value: "active" - will revert to this value when cleared
           </Text>
         </div>
-
         <Divider />
-
         <div>
           <Title level={4}>Multi-Select with Default (Priority)</Title>
           <Select
@@ -113,14 +103,11 @@ function App() {
             Default value: ["medium"] - will revert to this value when cleared
           </Text>
         </div>
-
         <Divider />
-
         <div>
           <Title level={4}>Current URL Parameters:</Title>
           <pre>{window.location.search}</pre>
         </div>
-
         <div>
           <Title level={4}>Parameter Values:</Title>
           <Space direction="vertical">
