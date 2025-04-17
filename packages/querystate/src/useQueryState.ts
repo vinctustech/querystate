@@ -22,7 +22,7 @@ interface NumberArrayParamConfig {
   defaultValue?: number[]
 }
 
-// New tuple config with size parameter
+// Tuple config with size parameter
 interface TupleParamConfig<N extends number> {
   type: 'tuple'
   size: N
@@ -48,40 +48,46 @@ type Capitalize<S extends string> = S extends `${infer F}${infer R}` ? `${Upperc
 // String parameter builder interfaces
 interface StringParamBuilder extends StringParamConfig {
   array(): ArrayParamBuilder
-  default(value: string): StringParamConfig
+  default(value: string): StringParamConfig & { defaultValue: string }
 }
 
 interface ArrayParamBuilder extends ArrayParamConfig {
-  default(value: string[]): ArrayParamConfig
+  default(value: string[]): ArrayParamConfig & { defaultValue: string[] }
 }
 
 // Number parameter builder interfaces
 interface NumberParamBuilder extends NumberParamConfig {
   array(): NumberArrayParamBuilder
   tuple<N extends number>(size: N): TupleParamBuilder<N>
-  default(value: number): NumberParamConfig
+  default(value: number): NumberParamConfig & { defaultValue: number }
 }
 
 interface NumberArrayParamBuilder extends NumberArrayParamConfig {
-  default(value: number[]): NumberArrayParamConfig
+  default(value: number[]): NumberArrayParamConfig & { defaultValue: number[] }
 }
 
-// New tuple parameter builder interface
+// Tuple parameter builder interface
 interface TupleParamBuilder<N extends number> extends Omit<TupleParamConfig<N>, 'defaultValue'> {
-  default(value: NumberTuple<N>): TupleParamConfig<N>
+  default(value: NumberTuple<N>): TupleParamConfig<N> & { defaultValue: NumberTuple<N> }
 }
 
-// Helper type for parameter extraction - handles tuples with their specific length
+// Improved helper type for parameter extraction that handles defaults correctly
 type ExtractParamType<T extends ParamConfig> =
   T extends TupleParamConfig<infer N>
-    ? NumberTuple<N>
+    ? NumberTuple<N> // Tuples are always fixed-length arrays
     : T extends NumberArrayParamConfig
-      ? number[]
+      ? number[] // Number arrays are always arrays
       : T extends ArrayParamConfig
-        ? string[]
+        ? string[] // String arrays are always arrays
         : T extends NumberParamConfig
-          ? number | undefined
-          : string | undefined
+          ? T['defaultValue'] extends number
+            ? number // Number with default is always a number
+            : number | undefined // Number without default can be undefined
+          : T extends StringParamConfig
+            ? T['defaultValue'] extends string
+              ? string // String with default is always a string
+              : string | undefined // String without default can be undefined
+            : never
 
 // Define result type based on schema
 type QueryStateResult<T extends Record<string, ParamConfig>> = {
@@ -122,12 +128,12 @@ export const queryState = {
 
         return {
           ...arrayConfig,
-          default(value: string[]): ArrayParamConfig {
+          default(value: string[]): ArrayParamConfig & { defaultValue: string[] } {
             return { ...arrayConfig, defaultValue: value }
           },
         }
       },
-      default(value: string): StringParamConfig {
+      default(value: string): StringParamConfig & { defaultValue: string } {
         return { ...config, defaultValue: value }
       },
     }
@@ -143,7 +149,7 @@ export const queryState = {
 
         return {
           ...arrayConfig,
-          default(value: number[]): NumberArrayParamConfig {
+          default(value: number[]): NumberArrayParamConfig & { defaultValue: number[] } {
             return { ...arrayConfig, defaultValue: value }
           },
         }
@@ -158,16 +164,16 @@ export const queryState = {
 
         return {
           ...tupleConfig,
-          default(value: NumberTuple<N>): TupleParamConfig<N> {
+          default(value: NumberTuple<N>): TupleParamConfig<N> & { defaultValue: NumberTuple<N> } {
             // Type assertion to make TypeScript recognize this is an array
             if ((value as number[]).length !== size) {
               throw new Error(`Default value must be a tuple of exactly ${size} numbers`)
             }
-            return { ...tupleConfig, defaultValue: value as number[] }
+            return { ...tupleConfig, defaultValue: value as NumberTuple<N> }
           },
         }
       },
-      default(value: number): NumberParamConfig {
+      default(value: number): NumberParamConfig & { defaultValue: number } {
         return { ...config, defaultValue: value }
       },
     }
@@ -224,6 +230,16 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
           needsUpdate = true
           updatedParams.set(key, config.defaultValue as string)
         }
+      } else if (config.type === 'tuple' && !searchParams.has(key)) {
+        // Special case for tuples without explicit defaults
+        // For tuples with no values and no default, use zeros (tuples should never be undefined)
+        const size = config.size as number
+        needsUpdate = true
+        Array(size)
+          .fill(0)
+          .forEach((val) => {
+            updatedParams.append(key, val.toString())
+          })
       }
     })
 
@@ -363,6 +379,14 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
         const paramValue = searchParams.get(key)
         const numberValue = parseUrlNumber(paramValue)
 
+        // If this parameter has a default and the value is undefined, use the default
+        const valueToUse =
+          numberValue !== undefined
+            ? numberValue
+            : config.defaultValue !== undefined
+              ? config.defaultValue
+              : undefined
+
         const setNumberValue = (newValue: number | undefined) => {
           const updatedParams = new URLSearchParams(searchParams)
 
@@ -378,7 +402,7 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
         }
 
         Object.defineProperty(result, key, {
-          value: numberValue,
+          value: valueToUse,
           enumerable: true,
         })
 
@@ -389,7 +413,14 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
       } else {
         // Handle single string parameters
         const paramValue = searchParams.get(key)
-        const singleValue = paramValue !== null ? paramValue : undefined
+
+        // If this parameter has a default and the value is null, use the default
+        const valueToUse =
+          paramValue !== null
+            ? paramValue
+            : config.defaultValue !== undefined
+              ? config.defaultValue
+              : undefined
 
         const setSingleValue = (newValue: string | undefined) => {
           const updatedParams = new URLSearchParams(searchParams)
@@ -406,7 +437,7 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
         }
 
         Object.defineProperty(result, key, {
-          value: singleValue,
+          value: valueToUse,
           enumerable: true,
         })
 
