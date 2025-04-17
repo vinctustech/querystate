@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@vinctus/querystate.svg)](https://www.npmjs.com/package/@vinctus/querystate)
 [![npm downloads](https://img.shields.io/npm/dm/@vinctus/querystate.svg)](https://www.npmjs.com/package/@vinctus/querystate)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.7%2B-blue)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-16.8%2B-blue)](https://reactjs.org/)
 
@@ -275,4 +275,4 @@ This format ensures compatibility with server-side processing, browser history, 
 
 ## License
 
-MIT
+ISC
