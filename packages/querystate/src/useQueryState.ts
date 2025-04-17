@@ -22,7 +22,25 @@ interface NumberArrayParamConfig {
   defaultValue?: number[]
 }
 
-type ParamConfig = StringParamConfig | ArrayParamConfig | NumberParamConfig | NumberArrayParamConfig
+// New tuple config with size parameter
+interface TupleParamConfig<N extends number> {
+  type: 'tuple'
+  size: N
+  defaultValue?: number[]
+}
+
+// Helper type to create numeric tuples of specific length
+type NumberTuple<N extends number, T extends number[] = []> = T['length'] extends N
+  ? T
+  : NumberTuple<N, [...T, number]>
+
+// Union of all parameter configs
+type ParamConfig =
+  | StringParamConfig
+  | ArrayParamConfig
+  | NumberParamConfig
+  | NumberArrayParamConfig
+  | TupleParamConfig<number>
 
 // Helper type for capitalizing first letter
 type Capitalize<S extends string> = S extends `${infer F}${infer R}` ? `${Uppercase<F>}${R}` : S
@@ -40,6 +58,7 @@ interface ArrayParamBuilder extends ArrayParamConfig {
 // Number parameter builder interfaces
 interface NumberParamBuilder extends NumberParamConfig {
   array(): NumberArrayParamBuilder
+  tuple<N extends number>(size: N): TupleParamBuilder<N>
   default(value: number): NumberParamConfig
 }
 
@@ -47,23 +66,36 @@ interface NumberArrayParamBuilder extends NumberArrayParamConfig {
   default(value: number[]): NumberArrayParamConfig
 }
 
+// New tuple parameter builder interface
+interface TupleParamBuilder<N extends number> extends Omit<TupleParamConfig<N>, 'defaultValue'> {
+  default(value: NumberTuple<N>): TupleParamConfig<N>
+}
+
+// Helper type for parameter extraction - handles tuples with their specific length
+type ExtractParamType<T extends ParamConfig> =
+  T extends TupleParamConfig<infer N>
+    ? NumberTuple<N>
+    : T extends NumberArrayParamConfig
+      ? number[]
+      : T extends ArrayParamConfig
+        ? string[]
+        : T extends NumberParamConfig
+          ? number | undefined
+          : string | undefined
+
 // Define result type based on schema
 type QueryStateResult<T extends Record<string, ParamConfig>> = {
-  [K in keyof T]: T[K]['type'] extends 'array'
-    ? string[]
-    : T[K]['type'] extends 'singleNumber'
-      ? number | undefined
-      : T[K]['type'] extends 'numberArray'
-        ? number[]
-        : string | undefined
+  [K in keyof T]: ExtractParamType<T[K]>
 } & {
-  [K in keyof T as `set${Capitalize<string & K>}`]: T[K]['type'] extends 'array'
-    ? (value: string[] | undefined) => void
-    : T[K]['type'] extends 'singleNumber'
-      ? (value: number | undefined) => void
-      : T[K]['type'] extends 'numberArray'
-        ? (value: number[] | undefined) => void
-        : (value: string | undefined) => void
+  [K in keyof T as `set${Capitalize<string & K>}`]: T[K] extends TupleParamConfig<infer N>
+    ? (value: NumberTuple<N> | undefined) => void
+    : T[K] extends NumberArrayParamConfig
+      ? (value: number[] | undefined) => void
+      : T[K] extends ArrayParamConfig
+        ? (value: string[] | undefined) => void
+        : T[K] extends NumberParamConfig
+          ? (value: number | undefined) => void
+          : (value: string | undefined) => void
 }
 
 // Helper functions for number conversion
@@ -116,6 +148,25 @@ export const queryState = {
           },
         }
       },
+      tuple<N extends number>(size: N): TupleParamBuilder<N> {
+        // Validate tuple size
+        if (size < 2 || !Number.isInteger(size)) {
+          throw new Error('Tuple size must be an integer >= 2')
+        }
+
+        const tupleConfig: TupleParamConfig<N> = { type: 'tuple', size }
+
+        return {
+          ...tupleConfig,
+          default(value: NumberTuple<N>): TupleParamConfig<N> {
+            // Type assertion to make TypeScript recognize this is an array
+            if ((value as number[]).length !== size) {
+              throw new Error(`Default value must be a tuple of exactly ${size} numbers`)
+            }
+            return { ...tupleConfig, defaultValue: value as number[] }
+          },
+        }
+      },
       default(value: number): NumberParamConfig {
         return { ...config, defaultValue: value }
       },
@@ -124,8 +175,8 @@ export const queryState = {
 }
 
 /**
- * A custom hook for managing URL query parameters with support for string and
- * number values, both as single values and arrays, with chainable configuration.
+ * A custom hook for managing URL query parameters with support for string values,
+ * number values, arrays, and fixed-length tuples, with chainable configuration.
  *
  * @param schema An object defining the parameters using the queryState builder
  * @returns An object with values and setters for each parameter
@@ -155,6 +206,14 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
           if (arrayDefaults.length > 0) {
             needsUpdate = true
             arrayDefaults.forEach((val) => {
+              updatedParams.append(key, val.toString())
+            })
+          }
+        } else if (config.type === 'tuple') {
+          const tupleDefaults = config.defaultValue as number[]
+          if (tupleDefaults.length > 0) {
+            needsUpdate = true
+            tupleDefaults.forEach((val) => {
               updatedParams.append(key, val.toString())
             })
           }
@@ -244,6 +303,59 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
 
         Object.defineProperty(result, `set${capitalizedKey}`, {
           value: setNumberArrayValue,
+          enumerable: true,
+        })
+      } else if (config.type === 'tuple') {
+        // Handle tuple parameters (fixed-length arrays)
+        const size = config.size
+        const stringValues = searchParams.getAll(key)
+        const parsedValues = stringValues
+          .map((val) => parseUrlNumber(val))
+          .filter((val): val is number => val !== undefined)
+
+        // Create the tuple, ensuring it's always the correct length
+        let tupleValue: number[]
+
+        // Type assertion for array length comparison
+        if ((parsedValues as number[]).length !== size) {
+          // Wrong size in URL - use default or zeros
+          tupleValue = config.defaultValue ? [...config.defaultValue] : Array(size).fill(0)
+        } else {
+          tupleValue = parsedValues
+        }
+
+        // Create setter that maintains tuple structure
+        const setTupleValue = (newValue: number[] | undefined) => {
+          const updatedParams = new URLSearchParams(searchParams)
+          updatedParams.delete(key)
+
+          // Use either the new value, default, or zeros - always maintaining tuple size
+          let valueToSet: number[]
+
+          if (newValue && (newValue as number[]).length === size) {
+            valueToSet = newValue
+          } else if (config.defaultValue) {
+            valueToSet = [...config.defaultValue]
+          } else {
+            valueToSet = Array(size).fill(0)
+          }
+
+          // Always set exactly 'size' values
+          valueToSet.forEach((val) => {
+            updatedParams.append(key, val.toString())
+          })
+
+          setSearchParams(updatedParams)
+        }
+
+        // Use type assertion to convince TypeScript this is a proper tuple
+        Object.defineProperty(result, key, {
+          value: tupleValue,
+          enumerable: true,
+        })
+
+        Object.defineProperty(result, `set${capitalizedKey}`, {
+          value: setTupleValue,
           enumerable: true,
         })
       } else if (config.type === 'singleNumber') {
