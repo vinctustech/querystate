@@ -33,128 +33,176 @@ import { useQueryState, queryState } from '@vinctus/querystate';
 import { Select, InputNumber, Slider } from 'antd';
 
 function FilterComponent() {
-  const { 
-    category, setCategory,        // String parameter
-    tags, setTags,                // String array
-    page, setPage,                // Number parameter
-    priceRange, setPriceRange     // Number tuple (fixed length)
+  const {
+    category, setCategory,        // String parameter (string | undefined)
+    tags, setTags,                // String array (string[])
+    page, setPage,                // Number parameter with default (number - never undefined)
+    priceRange, setPriceRange     // Number tuple with default ([number, number] - never undefined)
   } = useQueryState({
-    category: queryState.string(),              
-    tags: queryState.string().array(),           
+    category: queryState.string(),
+    tags: queryState.string().array(),
     page: queryState.number().default(1),
     priceRange: queryState.number().tuple(2).default([0, 100])
   });
 
   return (
-    <div>
-      <Select
-        placeholder="Select category"
-        value={category}
-        onChange={setCategory}
-        options={[
-          { value: 'electronics', label: 'Electronics' },
-          { value: 'books', label: 'Books' }
-        ]}
-      />
+          <div>
+            <Select
+                    placeholder="Select category"
+                    value={category}  // May be undefined if not in URL
+                    onChange={setCategory}
+                    options={[
+                      { value: 'electronics', label: 'Electronics' },
+                      { value: 'books', label: 'Books' }
+                    ]}
+            />
 
-      <Select
-        mode="multiple"
-        placeholder="Select tags"
-        value={tags}
-        onChange={setTags}
-        options={[
-          { value: 'new', label: 'New' },
-          { value: 'sale', label: 'Sale' }
-        ]}
-      />
-      
-      <InputNumber 
-        value={page} 
-        onChange={setPage} 
-        min={1} 
-      />
-      
-      <Slider
-        range
-        min={0}
-        max={1000}
-        value={priceRange}
-        onChange={setPriceRange}
-      />
-    </div>
+            <Select
+                    mode="multiple"
+                    placeholder="Select tags"
+                    value={tags}  // Empty array if not in URL, never undefined
+                    onChange={setTags}
+                    options={[
+                      { value: 'new', label: 'New' },
+                      { value: 'sale', label: 'Sale' }
+                    ]}
+            />
+
+            <InputNumber
+                    value={page}  // Always a number (default: 1), never undefined
+                    onChange={setPage}
+                    min={1}
+            />
+
+            <Slider
+                    range
+                    min={0}
+                    max={1000}
+                    value={priceRange}  // Always [number, number] (default: [0, 100]), never undefined
+                    onChange={setPriceRange}
+            />
+          </div>
   );
 }
 ```
 
 ## Parameter Types
 
+Here's what each parameter type returns based on whether it has a default value:
+
 ### String Parameters
 
 ```tsx
-// Single string parameter (undefined when not in URL)
+// Without default: string | undefined
 const { name, setName } = useQueryState({
   name: queryState.string()
 });
+// name: string | undefined
 
-// Single string with default value
+// With default: string (never undefined)
 const { status, setStatus } = useQueryState({
   status: queryState.string().default('active')
 });
+// status: string
+```
 
-// String array parameter ([] when not in URL)
+### Array Parameters
+
+```tsx
+// Array without default: always returns [] when not in URL (never undefined)
 const { tags, setTags } = useQueryState({
   tags: queryState.string().array()
 });
+// tags: string[]
 
-// String array with default values
+// Array with default: uses default values when not in URL
 const { priority, setPriority } = useQueryState({
   priority: queryState.string().array().default(['medium'])
 });
+// priority: string[]
 ```
 
 ### Number Parameters
 
 ```tsx
-// Single number parameter (undefined when not in URL)
+// Without default: number | undefined
 const { id, setId } = useQueryState({
   id: queryState.number()
 });
+// id: number | undefined
 
-// Single number with default value
+// With default: number (never undefined)
 const { page, setPage } = useQueryState({
   page: queryState.number().default(1)
 });
-
-// Number array parameter ([] when not in URL)
-const { scores, setScores } = useQueryState({
-  scores: queryState.number().array()
-});
-
-// Number array with default values
-const { years, setYears } = useQueryState({
-  years: queryState.number().array().default([2022, 2023])
-});
+// page: number
 ```
 
-### Tuple Parameters (New!)
-
-Tuples are fixed-length arrays that always maintain their structure:
+### Tuple Parameters
 
 ```tsx
-// Price range tuple (always exactly 2 numbers)
+// Tuples are always fixed-length and never undefined
 const { priceRange, setPriceRange } = useQueryState({
   priceRange: queryState.number().tuple(2).default([0, 100])
 });
+// priceRange: [number, number]
 
-// 2D coordinates (always exactly 2 numbers)
+// Without an explicit default, tuples will use zeros as the default
 const { coordinates, setCoordinates } = useQueryState({
-  coordinates: queryState.number().tuple(2).default([0, 0])
+  coordinates: queryState.number().tuple(2)
+});
+// coordinates: [number, number] (defaults to [0, 0] if not in URL)
+```
+
+## Type Safety Benefits
+
+Understanding the type behavior of QueryState has important implications for your application code:
+
+### 1. No Nullability Checks Needed for Defaults
+
+When you provide a default value, you don't need optional chaining or nullability checks:
+
+```tsx
+// With default - no need for optional chaining or nullability checks
+const { page } = useQueryState({
+  page: queryState.number().default(1)
 });
 
-// RGB color (always exactly 3 numbers)
-const { rgbColor, setRgbColor } = useQueryState({
-  rgbColor: queryState.number().tuple(3).default([128, 128, 128])
+// Safe to use directly - will never be undefined
+const nextPage = page + 1;
+```
+
+### 2. Proper Type Guards for Non-Default Values
+
+For parameters without defaults, use proper type guards:
+
+```tsx
+const { category } = useQueryState({
+  category: queryState.string()
 });
+
+// Need to check for undefined
+if (category) {
+  // Safe to use category as string here
+  console.log(category.toUpperCase());
+}
+```
+
+### 3. Arrays and Tuples Are Always Available
+
+Array parameters (both with and without defaults) are never undefined:
+
+```tsx
+const { tags, coordinates } = useQueryState({
+  tags: queryState.string().array(),
+  coordinates: queryState.number().tuple(2)
+});
+
+// Safe to use array methods directly
+const hasSaleTag = tags.includes('sale');
+
+// Safe to access tuple elements directly
+const [x, y] = coordinates;
 ```
 
 ## Working with Tuples vs Arrays
