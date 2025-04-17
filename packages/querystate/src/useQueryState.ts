@@ -104,16 +104,10 @@ type QueryStateResult<T extends Record<string, ParamConfig>> = {
           : (value: string | undefined) => void
 }
 
-// Helper functions for number conversion
 function parseUrlNumber(value: string | null): number | undefined {
   if (value === null) return undefined
   const parsed = Number(value)
   return !isNaN(parsed) && isFinite(parsed) ? parsed : undefined
-}
-
-function numberToUrlString(value: number | undefined): string | undefined {
-  if (value === undefined || isNaN(value) || !isFinite(value)) return undefined
-  return value.toString()
 }
 
 // The queryState API with chainable methods
@@ -225,15 +219,15 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
           }
         } else if (config.type === 'singleNumber') {
           needsUpdate = true
-          updatedParams.set(key, (config.defaultValue as number).toString())
+          updatedParams.set(key, config.defaultValue.toString())
         } else {
           needsUpdate = true
-          updatedParams.set(key, config.defaultValue as string)
+          updatedParams.set(key, config.defaultValue)
         }
       } else if (config.type === 'tuple' && !searchParams.has(key)) {
         // Special case for tuples without explicit defaults
         // For tuples with no values and no default, use zeros (tuples should never be undefined)
-        const size = config.size as number
+        const size = config.size
         needsUpdate = true
         Array(size)
           .fill(0)
