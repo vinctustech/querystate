@@ -1,27 +1,54 @@
-import { Select, Card, Space, Divider, Typography, Alert } from 'antd'
+import { Select, Card, Space, Divider, Typography, Alert, InputNumber, Slider, Badge } from 'antd'
 import { useQueryState, queryState } from 'querystate/src/useQueryState'
 
 const { Title, Text } = Typography
 
 function App() {
-  const { category, setCategory, tags, setTags, status, setStatus, priority, setPriority } =
-    useQueryState({
-      category: queryState.string(),
-      tags: queryState.string().array(),
-      status: queryState.string().default('active'),
-      priority: queryState.string().array().default(['medium']),
-    })
+  const {
+    // String parameters (existing)
+    category,
+    setCategory,
+    tags,
+    setTags,
+    status,
+    setStatus,
+    priority,
+    setPriority,
+    // Number parameters (new)
+    page,
+    setPage,
+    limit,
+    setLimit,
+    priceRange,
+    setPriceRange,
+    productIds,
+    setProductIds,
+  } = useQueryState({
+    // String parameters
+    category: queryState.string(),
+    tags: queryState.string().array(),
+    status: queryState.string().default('active'),
+    priority: queryState.string().array().default(['medium']),
+    // Number parameters
+    page: queryState.number().default(1),
+    limit: queryState.number().default(10),
+    priceRange: queryState.number().array().default([0, 100]),
+    productIds: queryState.number().array(),
+  })
 
   return (
     <Card title="URL Query Parameters Demo">
       <Alert
-        message="Enhanced QueryState with Defaults"
-        description="This demo showcases the new chainable API with default values. Notice how 'status' and 'priority' parameters are automatically populated in the URL."
+        message="Enhanced QueryState with Number Support"
+        description="This demo showcases the enhanced API with support for both string and number parameters, including arrays and default values."
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
       />
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        {/* String Parameters Section */}
+        <Title level={3}>String Parameters</Title>
+
         <div>
           <Title level={4}>Single Select (Category)</Title>
           <Select
@@ -103,7 +130,88 @@ function App() {
             Default value: ["medium"] - will revert to this value when cleared
           </Text>
         </div>
+
+        {/* Number Parameters Section */}
+        <Divider style={{ borderWidth: 2 }} />
+        <Title level={3}>Number Parameters</Title>
+
+        <div>
+          <Title level={4}>Single Number (Page)</Title>
+          <Space>
+            <InputNumber
+              min={1}
+              max={100}
+              value={page}
+              onChange={(value) => setPage(value !== null ? value : undefined)}
+            />
+            <Badge count={page} color="blue" />
+          </Space>
+          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+            Default value: 1 - will revert to this value when cleared
+          </Text>
+        </div>
         <Divider />
+        <div>
+          <Title level={4}>Single Number (Items per Page)</Title>
+          <Space direction="vertical" style={{ width: 300 }}>
+            <InputNumber
+              min={5}
+              max={100}
+              step={5}
+              value={limit}
+              onChange={(value) => setLimit(value !== null ? value : undefined)}
+              style={{ width: 120 }}
+            />
+            <Text>Show {limit} items per page</Text>
+          </Space>
+          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+            Default value: 10 - will revert to this value when cleared
+          </Text>
+        </div>
+        <Divider />
+        <div>
+          <Title level={4}>Number Array (Price Range)</Title>
+          <Space direction="vertical" style={{ width: 300 }}>
+            <Slider
+              range
+              min={0}
+              max={1000}
+              value={priceRange}
+              onChange={(values) => setPriceRange(values)}
+            />
+            <Text>
+              Price: ${priceRange[0]} to ${priceRange[1]}
+            </Text>
+          </Space>
+          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+            Default value: [0, 100] - will revert to this value when cleared
+          </Text>
+        </div>
+        <Divider />
+        <div>
+          <Title level={4}>Number Array (Product IDs)</Title>
+          <Select
+            mode="multiple"
+            placeholder="Select product IDs"
+            allowClear
+            style={{ width: 300 }}
+            value={productIds}
+            onChange={(values) => setProductIds(values)}
+            options={[
+              { value: 1001, label: 'Product #1001' },
+              { value: 1002, label: 'Product #1002' },
+              { value: 1003, label: 'Product #1003' },
+              { value: 1004, label: 'Product #1004' },
+              { value: 1005, label: 'Product #1005' },
+            ]}
+          />
+          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+            No default value - will be removed from URL when cleared
+          </Text>
+        </div>
+
+        {/* URL and Values Display */}
+        <Divider style={{ borderWidth: 2 }} />
         <div>
           <Title level={4}>Current URL Parameters:</Title>
           <pre>{window.location.search}</pre>
@@ -111,10 +219,21 @@ function App() {
         <div>
           <Title level={4}>Parameter Values:</Title>
           <Space direction="vertical">
+            <Title level={5}>String Parameters</Title>
             <Text>Category: {category ?? '(none)'}</Text>
             <Text>Tags: {tags.length > 0 ? JSON.stringify(tags) : '(none)'}</Text>
             <Text>Status: {status ?? '(none)'}</Text>
             <Text>Priority: {priority.length > 0 ? JSON.stringify(priority) : '(none)'}</Text>
+
+            <Title level={5}>Number Parameters</Title>
+            <Text>Page: {page !== undefined ? page : '(none)'}</Text>
+            <Text>Limit: {limit !== undefined ? limit : '(none)'}</Text>
+            <Text>
+              Price Range: {priceRange.length > 0 ? JSON.stringify(priceRange) : '(none)'}
+            </Text>
+            <Text>
+              Product IDs: {productIds.length > 0 ? JSON.stringify(productIds) : '(none)'}
+            </Text>
           </Space>
         </div>
       </Space>
