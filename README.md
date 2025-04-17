@@ -1,6 +1,12 @@
 # QueryState
 
-A lightweight, type-safe React library for managing URL query parameters as application state, with robust handling of array parameters.
+[![npm version](https://img.shields.io/npm/v/@vinctus/querystate.svg)](https://www.npmjs.com/package/@vinctus/querystate)
+[![npm downloads](https://img.shields.io/npm/dm/@vinctus/querystate.svg)](https://www.npmjs.com/package/@vinctus/querystate)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-4.7%2B-blue)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-16.8%2B-blue)](https://reactjs.org/)
+
+A lightweight, type-safe React library for managing URL query parameters as application state, with robust handling of array parameters, number values, and fixed-length tuples.
 
 ## Features
 
@@ -8,6 +14,8 @@ A lightweight, type-safe React library for managing URL query parameters as appl
 - **Type-Safe API** - Fully TypeScript-compatible with intuitive types for values and setters
 - **Chainable Configuration** - Fluent API for defining parameter types with defaults
 - **Array Support** - First-class handling of multi-select components and array parameters
+- **Number Values** - Native support for numeric parameters with proper type conversion
+- **Tuple Support** - Fixed-length arrays that maintain their structure (perfect for sliders, coordinates, colors)
 - **Default Values** - Optional defaults that automatically populate the URL when parameters are missing
 - **React Router Integration** - Built on React Router's useSearchParams for seamless compatibility
 - **Framework Agnostic** - Works with any UI component library that accepts string/array values
@@ -18,28 +26,30 @@ A lightweight, type-safe React library for managing URL query parameters as appl
 npm install @vinctus/querystate react-router-dom
 ```
 
-## Usage
-
-### Basic Example
+## Basic Usage
 
 ```tsx
 import { useQueryState, queryState } from '@vinctus/querystate';
-import { Select } from 'antd';
+import { Select, InputNumber, Slider } from 'antd';
 
 function FilterComponent() {
-  const { category, setCategory, tags, setTags } = useQueryState({
-    category: queryState.string(),              // Single value parameter
-    tags: queryState.string().array()           // Multi-value parameter array
+  const { 
+    category, setCategory,        // String parameter
+    tags, setTags,                // String array
+    page, setPage,                // Number parameter
+    priceRange, setPriceRange     // Number tuple (fixed length)
+  } = useQueryState({
+    category: queryState.string(),              
+    tags: queryState.string().array(),           
+    page: queryState.number().default(1),
+    priceRange: queryState.number().tuple(2).default([0, 100])
   });
-
-  // Non-existent parameters without defaults will be `undefined`
-  // Making them work seamlessly with controlled components
 
   return (
     <div>
       <Select
         placeholder="Select category"
-        value={category}                        // `undefined` when not in URL
+        value={category}
         onChange={setCategory}
         options={[
           { value: 'electronics', label: 'Electronics' },
@@ -50,103 +60,164 @@ function FilterComponent() {
       <Select
         mode="multiple"
         placeholder="Select tags"
-        value={tags}                           // Empty array when not in URL
+        value={tags}
         onChange={setTags}
         options={[
           { value: 'new', label: 'New' },
           { value: 'sale', label: 'Sale' }
         ]}
       />
+      
+      <InputNumber 
+        value={page} 
+        onChange={setPage} 
+        min={1} 
+      />
+      
+      <Slider
+        range
+        min={0}
+        max={1000}
+        value={priceRange}
+        onChange={setPriceRange}
+      />
     </div>
   );
 }
 ```
 
-### Default Values
+## Parameter Types
+
+### String Parameters
 
 ```tsx
-import { useQueryState, queryState } from '@vinctus/querystate';
+// Single string parameter (undefined when not in URL)
+const { name, setName } = useQueryState({
+  name: queryState.string()
+});
 
-function FiltersWithDefaults() {
-  const { status, setPriority, priority } = useQueryState({
-    status: queryState.string().default('active'),          // Single value with default
-    priority: queryState.string().array().default(['medium']) // Array with default
-  });
+// Single string with default value
+const { status, setStatus } = useQueryState({
+  status: queryState.string().default('active')
+});
 
-  // If URL has no status param, it will be set to 'active'
-  // If URL has no priority param, it will be set to ['medium']
-  // ...
-}
+// String array parameter ([] when not in URL)
+const { tags, setTags } = useQueryState({
+  tags: queryState.string().array()
+});
+
+// String array with default values
+const { priority, setPriority } = useQueryState({
+  priority: queryState.string().array().default(['medium'])
+});
 ```
 
-## API Reference
-
-### useQueryState
+### Number Parameters
 
 ```tsx
-function useQueryState<T extends Record<string, ParamConfig>>(
-  schema: T
-): QueryStateResult<T>
+// Single number parameter (undefined when not in URL)
+const { id, setId } = useQueryState({
+  id: queryState.number()
+});
+
+// Single number with default value
+const { page, setPage } = useQueryState({
+  page: queryState.number().default(1)
+});
+
+// Number array parameter ([] when not in URL)
+const { scores, setScores } = useQueryState({
+  scores: queryState.number().array()
+});
+
+// Number array with default values
+const { years, setYears } = useQueryState({
+  years: queryState.number().array().default([2022, 2023])
+});
 ```
 
-Creates state variables from URL query parameters and provides setters to update them.
+### Tuple Parameters (New!)
 
-#### Parameters
-
-- `schema`: An object defining parameter configurations using the `queryState` builder API
-
-#### Returns
-
-An object containing:
-- A property for each parameter key with its current value:
-  - Single string parameters: `string | undefined` (undefined when not in URL)
-  - Array parameters: `string[]` (empty array when not in URL)
-- A setter function for each parameter with the naming pattern `setParameterName`
-
-### queryState
-
-The `queryState` object provides a chainable API for defining parameter types:
+Tuples are fixed-length arrays that always maintain their structure:
 
 ```tsx
-// Single string parameter (will be undefined if not in URL)
-queryState.string()
+// Price range tuple (always exactly 2 numbers)
+const { priceRange, setPriceRange } = useQueryState({
+  priceRange: queryState.number().tuple(2).default([0, 100])
+});
 
-// Single string with default
-queryState.string().default('defaultValue')
+// 2D coordinates (always exactly 2 numbers)
+const { coordinates, setCoordinates } = useQueryState({
+  coordinates: queryState.number().tuple(2).default([0, 0])
+});
 
-// Array parameter (will be [] if not in URL)
-queryState.string().array()
-
-// Array parameter with default values
-queryState.string().array().default(['value1', 'value2'])
+// RGB color (always exactly 3 numbers)
+const { rgbColor, setRgbColor } = useQueryState({
+  rgbColor: queryState.number().tuple(3).default([128, 128, 128])
+});
 ```
 
-## URL Format
+## Working with Tuples vs Arrays
 
-QueryState maintains proper URL formatting:
+### Variable-Length Arrays
 
-- Single values: `?category=electronics`
-- Multiple values: `?tags=new&tags=sale`
+Array parameters are variable-length and can be empty:
+- The URL might show `?scores=85&scores=92&scores=78` for multiple values
+- If all values are removed, the parameter disappears from the URL
+- Arrays provide flexibility when the number of items can vary
 
-This format ensures compatibility with server-side processing, browser history, and bookmarking.
+```tsx
+// Array can have any number of items (including zero)
+const { productIds, setProductIds } = useQueryState({
+  productIds: queryState.number().array()
+});
 
-## Parameter Behavior
+// Adding/removing elements
+setProductIds([...productIds, 1005]);  // Add a value
+setProductIds(productIds.filter(id => id !== 1002));  // Remove a value
+setProductIds([]);  // Clear all values
+```
 
-- **String parameters without defaults**: Return `undefined` when not present in the URL
-- **String parameters with defaults**: Return their default value when not in the URL
-- **Array parameters without defaults**: Return an empty array `[]` when not in the URL
-- **Array parameters with defaults**: Return their default array when not in the URL
+### Fixed-Length Tuples
 
-This behavior makes the library work seamlessly with controlled form components that expect `undefined` for empty states.
+Tuple parameters always maintain exactly the specified number of elements:
+- The URL for a color might show `?rgbColor=255&rgbColor=128&rgbColor=0`
+- If some values are manually removed from the URL, they're restored with defaults
+- Perfect for parameters that require a specific structure (coordinates, ranges, colors)
+
+```tsx
+// Tuple always has exactly 2 elements
+const { priceRange, setPriceRange } = useQueryState({
+  priceRange: queryState.number().tuple(2).default([0, 100])
+});
+
+// Modifying just one element
+const newRange = [...priceRange];
+newRange[0] = 25;  // Update min value
+setPriceRange(newRange);
+```
 
 ## Why Use QueryState?
 
 - **Simplifies State Management**: Eliminates duplicate state between URL and React components
 - **Improves UX**: Enables shareable, bookmarkable filters and views through URL persistence
-- **Type Safety**: Provides correct TypeScript types for single vs array parameters
-- **UI Library Compatible**: Works with any component library that accepts string/array values
+- **Type Safety**: Provides correct TypeScript types for parameters (strings, numbers, arrays, tuples)
+- **UI Library Compatible**: Works with any component library including Ant Design, MUI, etc.
 - **Consistent Parameter Handling**: Properly formats array parameters in the URL
 - **Automatic Default Values**: Ensures sensible defaults without extra code
+- **Structure Preservation**: Tuples maintain their structure even with URL manipulation
+
+## URL Format Examples
+
+QueryState maintains proper URL formatting:
+
+- Single string: `?category=electronics`
+- Single number: `?page=3`
+- String array: `?tags=new&tags=sale`
+- Number array: `?scores=85&scores=92&scores=78`
+- Number tuple: `?priceRange=10&priceRange=90`
+
+This format ensures compatibility with server-side processing, browser history, and bookmarking.
 
 ## Requirements
 
