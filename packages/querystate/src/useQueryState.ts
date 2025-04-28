@@ -299,8 +299,11 @@ export const queryState = {
     return createDateParam<T>(config)
   },
 
-  dateJs(): DateParamBuilder {
-    return createDateParam<Date>()
+  dateJs(config?: {
+    parse?: (str: string) => Date
+    serialize?: (date: Date) => string
+  }): DateParamBuilder {
+    return createDateParam<Date>(config)
   },
 
   dateDayjs(): DateParamBuilder<Dayjs> {
