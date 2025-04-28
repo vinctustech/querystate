@@ -1,3 +1,4 @@
+// Updated App.tsx with Date Support Demo
 import {
   Select,
   Card,
@@ -11,11 +12,22 @@ import {
   Row,
   Col,
   Button,
+  DatePicker,
+  Tag,
 } from 'antd'
-import { useQueryState, queryState as qs } from 'querystate/src/useQueryState'
+import { useQueryState, queryState } from 'querystate/src/useQueryState'
 import { useState } from 'react'
+import dayjs from 'dayjs'
 
 const { Title, Text, Paragraph } = Typography
+const { RangePicker } = DatePicker
+
+// Helper function for dayjs support
+const withDayjs = (dateParam: any, format?: string) => ({
+  ...dateParam,
+  parse: (str: string) => (format ? dayjs(str, format) : dayjs(str)),
+  serialize: (date: dayjs.Dayjs) => (format ? date.format(format) : date.toISOString()),
+})
 
 function App() {
   // Destructure everything to make it explicit for demo/testing
@@ -46,22 +58,54 @@ function App() {
     setCoordinates,
     rgbColor,
     setRgbColor,
+
+    // Date parameters (new)
+    orderDate,
+    setOrderDate,
+    deliveryDate,
+    setDeliveryDate,
+    eventDates,
+    setEventDates,
+    dateRange,
+    setDateRange,
+    // Custom format date (using dayjs)
+    meetingDate,
+    setMeetingDate,
+    // Date-time with time
+    appointmentTime,
+    setAppointmentTime,
   } = useQueryState({
     // String parameters
-    category: qs.string(),
-    tags: qs.string().array(),
-    status: qs.string().default('active'),
-    priority: qs.string().array().default(['medium']),
+    category: queryState.string(),
+    tags: queryState.string().array(),
+    status: queryState.string().default('active'),
+    priority: queryState.string().array().default(['medium']),
     // Number parameters
-    page: qs.number().default(1),
-    limit: qs.number().default(10),
+    page: queryState.number().default(1),
+    limit: queryState.number().default(10),
     // Number arrays (variable length)
-    scores: qs.number().array(),
-    productIds: qs.number().array(),
+    scores: queryState.number().array(),
+    productIds: queryState.number().array(),
     // Number tuples (fixed length with enforced length)
-    priceRange: qs.number().tuple(2).default([0, 100]),
-    coordinates: qs.number().tuple(2).default([0, 0]),
-    rgbColor: qs.number().tuple(3).default([128, 128, 128]),
+    priceRange: queryState.number().tuple(2).default([0, 100]),
+    coordinates: queryState.number().tuple(2).default([0, 0]),
+    rgbColor: queryState.number().tuple(3).default([128, 128, 128]),
+
+    // Date parameters (new)
+    // Native Date objects
+    orderDate: queryState.date(),
+    deliveryDate: queryState.date().default(new Date()),
+    eventDates: queryState.date().array(),
+    dateRange: queryState
+      .date()
+      .tuple(2)
+      .default([new Date(), new Date(new Date().setDate(new Date().getDate() + 7))]),
+
+    // Dayjs date with custom format (YYYY-MM-DD)
+    meetingDate: withDayjs(queryState.date<dayjs.Dayjs>(), 'YYYY-MM-DD'),
+
+    // Date-time with time component
+    appointmentTime: withDayjs(queryState.date<dayjs.Dayjs>()),
   })
 
   // Log setter usage for testing
@@ -73,7 +117,7 @@ function App() {
     setTestLog((prev) => [`${time}: ${setterName}(${JSON.stringify(value)})`, ...prev.slice(0, 9)])
   }
 
-  // Test helpers for each setter
+  // Test helpers for existing parameters (unchanged)
   const testSetCategory = (value: string | undefined) => {
     setCategory(value)
     logSetterUsage('setCategory', value)
@@ -129,6 +173,37 @@ function App() {
     logSetterUsage('setRgbColor', value)
   }
 
+  // New test helpers for date parameters
+  const testSetOrderDate = (value: Date | undefined) => {
+    setOrderDate(value)
+    logSetterUsage('setOrderDate', value)
+  }
+
+  const testSetDeliveryDate = (value: Date | undefined) => {
+    setDeliveryDate(value)
+    logSetterUsage('setDeliveryDate', value)
+  }
+
+  const testSetEventDates = (value: Date[] | undefined) => {
+    setEventDates(value)
+    logSetterUsage('setEventDates', value)
+  }
+
+  const testSetDateRange = (value: [Date, Date] | undefined) => {
+    setDateRange(value)
+    logSetterUsage('setDateRange', value)
+  }
+
+  const testSetMeetingDate = (value: dayjs.Dayjs | undefined) => {
+    setMeetingDate(value)
+    logSetterUsage('setMeetingDate', value ? value.format('YYYY-MM-DD') : undefined)
+  }
+
+  const testSetAppointmentTime = (value: dayjs.Dayjs | undefined) => {
+    setAppointmentTime(value)
+    logSetterUsage('setAppointmentTime', value ? value.format() : undefined)
+  }
+
   // Helper to display tuple values with labels
   const formatCoordinates = (coords: number[]) => {
     return `X: ${coords[0]}, Y: ${coords[1]}`
@@ -137,6 +212,21 @@ function App() {
   // Helper to format RGB color
   const formatRGB = (rgb: number[]) => {
     return `RGB(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`
+  }
+
+  // Helper to format date
+  const formatDate = (date: Date | undefined) => {
+    return date ? date.toLocaleDateString() : '(none)'
+  }
+
+  // Helper to format date array
+  const formatDateArray = (dates: Date[]) => {
+    return dates.length > 0 ? dates.map((d) => d.toLocaleDateString()).join(', ') : '(none)'
+  }
+
+  // Helper to format date range
+  const formatDateRange = (range: Date[]) => {
+    return `${range[0].toLocaleDateString()} - ${range[1].toLocaleDateString()}`
   }
 
   // Style for the color preview
@@ -149,11 +239,20 @@ function App() {
     marginLeft: '10px',
   }
 
+  // Predefined testing dates
+  const testDates = [
+    new Date(2025, 0, 15), // Jan 15, 2025
+    new Date(2025, 1, 14), // Feb 14, 2025
+    new Date(2025, 2, 17), // Mar 17, 2025
+    new Date(2025, 3, 1), // Apr 1, 2025
+    new Date(2025, 4, 5), // May 5, 2025
+  ]
+
   return (
     <Card title="URL Query Parameters Demo">
       <Alert
-        message="Enhanced QueryState with Tuple Support"
-        description="This demo showcases the difference between variable-length arrays and fixed-length tuples. Note how tuples always maintain their length even when manipulated in the URL."
+        message="Enhanced QueryState with Date Support"
+        description="This demo showcases date parameters alongside string, number, and tuple parameters. The library now supports native Date objects, dayjs, and custom date formats."
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
@@ -196,6 +295,36 @@ function App() {
             <Button onClick={() => testSetRgbColor([255, 0, 0])}>Test setRgbColor (Red)</Button>
           </Space>
 
+          <Divider orientation="left">Date Testing</Divider>
+          <Space wrap>
+            <Button onClick={() => testSetOrderDate(new Date(2025, 3, 15))}>
+              Test setOrderDate (Apr 15, 2025)
+            </Button>
+            <Button onClick={() => testSetDeliveryDate(new Date(2025, 3, 20))}>
+              Test setDeliveryDate (Apr 20, 2025)
+            </Button>
+            <Button
+              onClick={() =>
+                testSetEventDates([
+                  new Date(2025, 5, 1),
+                  new Date(2025, 5, 15),
+                  new Date(2025, 6, 4),
+                ])
+              }
+            >
+              Test setEventDates (3 dates)
+            </Button>
+            <Button onClick={() => testSetDateRange([new Date(2025, 7, 1), new Date(2025, 7, 14)])}>
+              Test setDateRange (Aug 1-14)
+            </Button>
+            <Button onClick={() => testSetMeetingDate(dayjs('2025-09-22'))}>
+              Test setMeetingDate (Sep 22, 2025)
+            </Button>
+            <Button onClick={() => testSetAppointmentTime(dayjs('2025-10-10T14:30:00'))}>
+              Test setAppointmentTime (Oct 10, 2:30 PM)
+            </Button>
+          </Space>
+
           <Divider orientation="left">Test Log (last 10 operations)</Divider>
           <div
             style={{
@@ -221,7 +350,7 @@ function App() {
       </Card>
 
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        {/* String Parameters Section */}
+        {/* String Parameters Section - Unchanged */}
         <Title level={3}>String Parameters</Title>
 
         <div>
@@ -306,7 +435,7 @@ function App() {
           </Text>
         </div>
 
-        {/* Number Parameters Section */}
+        {/* Number Parameters Section - Unchanged */}
         <Divider style={{ borderWidth: 2 }} />
         <Title level={3}>Number Parameters</Title>
 
@@ -344,7 +473,7 @@ function App() {
           </Text>
         </div>
 
-        {/* Number Arrays Section */}
+        {/* Number Arrays Section - Unchanged */}
         <Divider style={{ borderWidth: 2 }} />
         <Title level={3}>Number Arrays (Variable Length)</Title>
         <Alert
@@ -403,7 +532,7 @@ function App() {
           </Text>
         </div>
 
-        {/* Number Tuples Section */}
+        {/* Number Tuples Section - Unchanged */}
         <Divider style={{ borderWidth: 2 }} />
         <Title level={3}>Number Tuples (Fixed Length)</Title>
         <Alert
@@ -523,6 +652,135 @@ function App() {
           </Text>
         </div>
 
+        {/* Date Parameters Section - New */}
+        <Divider style={{ borderWidth: 2 }} />
+        <Title level={3}>Date Parameters</Title>
+        <Alert
+          message="Date Support"
+          description="QueryState now supports date parameters with the same patterns as strings and numbers. Dates can be single values, arrays, or tuples."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+
+        <div>
+          <Title level={4}>Single Date (Order Date)</Title>
+          <Space direction="vertical">
+            <DatePicker
+              value={orderDate ? dayjs(orderDate) : null}
+              onChange={(date) => testSetOrderDate(date ? date.toDate() : undefined)}
+              allowClear
+            />
+            <Text>Selected date: {formatDate(orderDate)}</Text>
+          </Space>
+          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+            No default value - will be removed from URL when cleared
+          </Text>
+        </div>
+        <Divider />
+        <div>
+          <Title level={4}>Single Date with Default (Delivery Date)</Title>
+          <Space direction="vertical">
+            <DatePicker
+              value={deliveryDate ? dayjs(deliveryDate) : null}
+              onChange={(date) => testSetDeliveryDate(date ? date.toDate() : undefined)}
+              allowClear
+            />
+            <Text>Selected date: {formatDate(deliveryDate)}</Text>
+          </Space>
+          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+            Default value: current date - will revert to this value when cleared
+          </Text>
+        </div>
+        <Divider />
+        <div>
+          <Title level={4}>Date Array (Event Dates)</Title>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Space wrap>
+              {testDates.map((date, index) => (
+                <Tag
+                  key={index}
+                  color={
+                    eventDates.some((d) => d.toDateString() === date.toDateString())
+                      ? 'blue'
+                      : 'default'
+                  }
+                  onClick={() => {
+                    if (eventDates.some((d) => d.toDateString() === date.toDateString())) {
+                      testSetEventDates(
+                        eventDates.filter((d) => d.toDateString() !== date.toDateString()),
+                      )
+                    } else {
+                      testSetEventDates([...eventDates, date])
+                    }
+                  }}
+                  style={{ cursor: 'pointer', padding: '5px 10px' }}
+                >
+                  {date.toLocaleDateString()}
+                </Tag>
+              ))}
+            </Space>
+            <Text>Selected event dates: {formatDateArray(eventDates)}</Text>
+          </Space>
+          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+            Variable-length array - can have any number of dates (including zero)
+          </Text>
+        </div>
+        <Divider />
+        <div>
+          <Title level={4}>Date Tuple (Date Range)</Title>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <RangePicker
+              value={[dayjs(dateRange[0]), dayjs(dateRange[1])]}
+              onChange={(dates) => {
+                if (dates && dates[0] && dates[1]) {
+                  testSetDateRange([dates[0].toDate(), dates[1].toDate()])
+                }
+              }}
+            />
+            <Text>Selected range: {formatDateRange(dateRange)}</Text>
+          </Space>
+          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+            2-Tuple with default [today, today+7days] - always has exactly 2 elements
+          </Text>
+        </div>
+        <Divider />
+        <div>
+          <Title level={4}>Dayjs Date with Custom Format (Meeting Date)</Title>
+          <Space direction="vertical">
+            <DatePicker
+              value={meetingDate || null}
+              onChange={(date) => testSetMeetingDate(date || undefined)}
+              format="YYYY-MM-DD"
+              allowClear
+            />
+            <Text>Selected date: {meetingDate ? meetingDate.format('YYYY-MM-DD') : '(none)'}</Text>
+          </Space>
+          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+            Using dayjs directly with a custom YYYY-MM-DD format
+          </Text>
+        </div>
+        <Divider />
+        <div>
+          <Title level={4}>Date-Time (Appointment Time)</Title>
+          <Space direction="vertical">
+            <DatePicker
+              showTime
+              value={appointmentTime || null}
+              onChange={(date) => testSetAppointmentTime(date || undefined)}
+              format="YYYY-MM-DD HH:mm:ss"
+              allowClear
+            />
+            <Text>
+              Selected date-time:{' '}
+              {appointmentTime ? appointmentTime.format('YYYY-MM-DD HH:mm:ss') : '(none)'}
+            </Text>
+          </Space>
+          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+            Full ISO date-time with time component
+          </Text>
+        </div>
+
         {/* URL and Values Display */}
         <Divider style={{ borderWidth: 2 }} />
         <div>
@@ -530,7 +788,7 @@ function App() {
           <pre>{window.location.search}</pre>
           <Alert
             message="Try this experiment"
-            description="Try manually removing some values from the tuples in the URL (e.g., delete one of the priceRange values). Notice how they are automatically restored because tuples always maintain their full structure."
+            description="Try manually removing some values from the tuples in the URL (e.g., delete one of the dateRange values). Notice how they are automatically restored because tuples always maintain their full structure."
             type="info"
             showIcon
             style={{ marginTop: 16 }}
@@ -559,6 +817,26 @@ function App() {
             <Text>Price Range: {JSON.stringify(priceRange)}</Text>
             <Text>Coordinates: {JSON.stringify(coordinates)}</Text>
             <Text>RGB Color: {JSON.stringify(rgbColor)}</Text>
+
+            <Title level={5}>Date Parameters</Title>
+            <Text>Order Date: {orderDate ? orderDate.toISOString() : '(none)'}</Text>
+            <Text>Delivery Date: {deliveryDate.toISOString()}</Text>
+            <Text>
+              Event Dates:{' '}
+              {eventDates.length > 0
+                ? eventDates.map((d) => d.toLocaleDateString()).join(', ')
+                : '(none)'}
+            </Text>
+            <Text>
+              Date Range: {dateRange[0].toLocaleDateString()} to {dateRange[1].toLocaleDateString()}
+            </Text>
+            <Text>
+              Meeting Date (dayjs): {meetingDate ? meetingDate.format('YYYY-MM-DD') : '(none)'}
+            </Text>
+            <Text>
+              Appointment Time:{' '}
+              {appointmentTime ? appointmentTime.format('YYYY-MM-DD HH:mm:ss') : '(none)'}
+            </Text>
           </Space>
         </div>
       </Space>
