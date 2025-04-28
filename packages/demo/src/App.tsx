@@ -12,7 +12,7 @@ import {
   Col,
   Button,
 } from 'antd'
-import { useQueryState, queryState } from 'querystate/src/useQueryState'
+import { useQueryState, queryState as qs } from 'querystate/src/useQueryState'
 import { useState } from 'react'
 
 const { Title, Text, Paragraph } = Typography
@@ -48,20 +48,20 @@ function App() {
     setRgbColor,
   } = useQueryState({
     // String parameters
-    category: queryState.string(),
-    tags: queryState.string().array(),
-    status: queryState.string().default('active'),
-    priority: queryState.string().array().default(['medium']),
+    category: qs.string(),
+    tags: qs.string().array(),
+    status: qs.string().default('active'),
+    priority: qs.string().array().default(['medium']),
     // Number parameters
-    page: queryState.number().default(1),
-    limit: queryState.number().default(10),
+    page: qs.number().default(1),
+    limit: qs.number().default(10),
     // Number arrays (variable length)
-    scores: queryState.number().array(),
-    productIds: queryState.number().array(),
+    scores: qs.number().array(),
+    productIds: qs.number().array(),
     // Number tuples (fixed length with enforced length)
-    priceRange: queryState.number().tuple(2).default([0, 100]),
-    coordinates: queryState.number().tuple(2).default([0, 0]),
-    rgbColor: queryState.number().tuple(3).default([128, 128, 128]),
+    priceRange: qs.number().tuple(2).default([0, 100]),
+    coordinates: qs.number().tuple(2).default([0, 0]),
+    rgbColor: qs.number().tuple(3).default([128, 128, 128]),
   })
 
   // Log setter usage for testing
