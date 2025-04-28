@@ -5,6 +5,7 @@ import 'antd/dist/reset.css'
 import { ConfigProvider, Layout, theme } from 'antd'
 import { Content } from 'antd/es/layout/layout'
 import { BrowserRouter } from 'react-router-dom'
+import DateTestApp from './DateTestApp.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

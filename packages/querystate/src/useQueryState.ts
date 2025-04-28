@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import { useEffect, useMemo } from 'react'
+import dayjs, { Dayjs } from 'dayjs'
 
 // String parameter type definitions
 interface StringParamConfig {
@@ -175,6 +176,60 @@ function parseUrlNumber(value: string | null): number | undefined {
   return !isNaN(parsed) && isFinite(parsed) ? parsed : undefined
 }
 
+function createDateParam<T = Date>(config?: {
+  parse?: (str: string) => T
+  serialize?: (date: T) => string
+}): DateParamBuilder<T> {
+  const dateConfig: DateParamConfig<T> = {
+    type: 'date',
+    parse: config?.parse || ((str: string) => new Date(str) as unknown as T),
+    serialize: config?.serialize || ((date: T) => (date as unknown as Date).toISOString()),
+  }
+
+  return {
+    ...dateConfig,
+    array(): DateArrayParamBuilder<T> {
+      const arrayConfig: DateArrayParamConfig<T> = {
+        type: 'dateArray',
+        parse: dateConfig.parse,
+        serialize: dateConfig.serialize,
+      }
+
+      return {
+        ...arrayConfig,
+        default(value: T[]): DateArrayParamConfig<T> & { defaultValue: T[] } {
+          return { ...arrayConfig, defaultValue: value }
+        },
+      }
+    },
+    tuple<N extends number>(size: N): DateTupleParamBuilder<N, T> {
+      if (size < 2 || !Number.isInteger(size)) {
+        throw new Error('Tuple size must be an integer >= 2')
+      }
+
+      const tupleConfig: DateTupleParamConfig<N, T> = {
+        type: 'dateTuple',
+        size,
+        parse: dateConfig.parse,
+        serialize: dateConfig.serialize,
+      }
+
+      return {
+        ...tupleConfig,
+        default(value: T[]): DateTupleParamConfig<N, T> & { defaultValue: T[] } {
+          if (value.length !== size) {
+            throw new Error(`Default value must be a tuple of exactly ${size} dates`)
+          }
+          return { ...tupleConfig, defaultValue: value }
+        },
+      }
+    },
+    default(value: T): DateParamConfig<T> & { defaultValue: T } {
+      return { ...dateConfig, defaultValue: value }
+    },
+  }
+}
+
 // The queryState API with chainable methods
 export const queryState = {
   string(): StringParamBuilder {
@@ -237,59 +292,22 @@ export const queryState = {
       },
     }
   },
-
   date<T = Date>(config?: {
     parse?: (str: string) => T
     serialize?: (date: T) => string
   }): DateParamBuilder<T> {
-    const dateConfig: DateParamConfig<T> = {
-      type: 'date',
-      parse: config?.parse || ((str: string) => new Date(str) as unknown as T),
-      serialize: config?.serialize || ((date: T) => (date as unknown as Date).toISOString()),
-    }
+    return createDateParam<T>(config)
+  },
 
-    return {
-      ...dateConfig,
-      array(): DateArrayParamBuilder<T> {
-        const arrayConfig: DateArrayParamConfig<T> = {
-          type: 'dateArray',
-          parse: dateConfig.parse,
-          serialize: dateConfig.serialize,
-        }
+  dateJs(): DateParamBuilder {
+    return createDateParam<Date>()
+  },
 
-        return {
-          ...arrayConfig,
-          default(value: T[]): DateArrayParamConfig<T> & { defaultValue: T[] } {
-            return { ...arrayConfig, defaultValue: value }
-          },
-        }
-      },
-      tuple<N extends number>(size: N): DateTupleParamBuilder<N, T> {
-        if (size < 2 || !Number.isInteger(size)) {
-          throw new Error('Tuple size must be an integer >= 2')
-        }
-
-        const tupleConfig: DateTupleParamConfig<N, T> = {
-          type: 'dateTuple',
-          size,
-          parse: dateConfig.parse,
-          serialize: dateConfig.serialize,
-        }
-
-        return {
-          ...tupleConfig,
-          default(value: T[]): DateTupleParamConfig<N, T> & { defaultValue: T[] } {
-            if (value.length !== size) {
-              throw new Error(`Default value must be a tuple of exactly ${size} dates`)
-            }
-            return { ...tupleConfig, defaultValue: value }
-          },
-        }
-      },
-      default(value: T): DateParamConfig<T> & { defaultValue: T } {
-        return { ...dateConfig, defaultValue: value }
-      },
-    }
+  dateDayjs(): DateParamBuilder<Dayjs> {
+    return createDateParam<Dayjs>({
+      parse: (str) => dayjs(str),
+      serialize: (date) => date.toISOString(),
+    })
   },
 }
 
@@ -537,7 +555,9 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
         // Handle single date parameter
         const dateConfig = config as DateParamConfig<any>
         const paramValue = searchParams.get(key)
-        let dateValue: any = undefined
+
+        // Fix: Use the correct type based on the generic parameter
+        let dateValue: typeof dateConfig.defaultValue | undefined = undefined
 
         if (paramValue !== null) {
           dateValue = dateConfig.parse ? dateConfig.parse(paramValue) : new Date(paramValue)
@@ -545,7 +565,7 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
           dateValue = dateConfig.defaultValue
         }
 
-        const setDateValue = (newValue: any) => {
+        const setDateValue = (newValue: typeof dateConfig.defaultValue | undefined) => {
           const updatedParams = new URLSearchParams(searchParams)
 
           if (newValue !== undefined) {
@@ -578,6 +598,8 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
         // Handle date array parameter
         const dateArrayConfig = config as DateArrayParamConfig<any>
         const stringValues = searchParams.getAll(key)
+
+        // Fix: Use the correct type for the array elements
         const dateValues = stringValues.map((val) =>
           dateArrayConfig.parse ? dateArrayConfig.parse(val) : new Date(val),
         )
@@ -619,11 +641,14 @@ export function useQueryState<T extends Record<string, ParamConfig>>(
         const dateTupleConfig = config as DateTupleParamConfig<number, any>
         const size = dateTupleConfig.size
         const stringValues = searchParams.getAll(key)
+
+        // Fix: Use the correct type for the parsed values
         const parsedValues = stringValues.map((val) =>
           dateTupleConfig.parse ? dateTupleConfig.parse(val) : new Date(val),
         )
 
         // Create the tuple, ensuring it's always the correct length
+        // Fix: Use the appropriate type based on the generic parameter
         let tupleValue: any[]
 
         if (parsedValues.length !== size) {

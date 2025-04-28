@@ -22,13 +22,6 @@ import dayjs from 'dayjs'
 const { Title, Text, Paragraph } = Typography
 const { RangePicker } = DatePicker
 
-// Helper function for dayjs support
-const withDayjs = (dateParam: any, format?: string) => ({
-  ...dateParam,
-  parse: (str: string) => (format ? dayjs(str, format) : dayjs(str)),
-  serialize: (date: dayjs.Dayjs) => (format ? date.format(format) : date.toISOString()),
-})
-
 function App() {
   // Destructure everything to make it explicit for demo/testing
   const {
@@ -69,9 +62,6 @@ function App() {
     dateRange,
     setDateRange,
     // Custom format date (using dayjs)
-    meetingDate,
-    setMeetingDate,
-    // Date-time with time
     appointmentTime,
     setAppointmentTime,
   } = useQueryState({
@@ -93,19 +83,16 @@ function App() {
 
     // Date parameters (new)
     // Native Date objects
-    orderDate: queryState.date(),
-    deliveryDate: queryState.date().default(new Date()),
-    eventDates: queryState.date().array(),
+    orderDate: queryState.dateJs(),
+    deliveryDate: queryState.dateJs().default(new Date()),
+    eventDates: queryState.dateJs().array(),
     dateRange: queryState
-      .date()
+      .dateJs()
       .tuple(2)
       .default([new Date(), new Date(new Date().setDate(new Date().getDate() + 7))]),
 
-    // Dayjs date with custom format (YYYY-MM-DD)
-    meetingDate: withDayjs(queryState.date<dayjs.Dayjs>(), 'YYYY-MM-DD'),
-
     // Date-time with time component
-    appointmentTime: withDayjs(queryState.date<dayjs.Dayjs>()),
+    appointmentTime: queryState.dateDayjs(),
   })
 
   // Log setter usage for testing
@@ -192,11 +179,6 @@ function App() {
   const testSetDateRange = (value: [Date, Date] | undefined) => {
     setDateRange(value)
     logSetterUsage('setDateRange', value)
-  }
-
-  const testSetMeetingDate = (value: dayjs.Dayjs | undefined) => {
-    setMeetingDate(value)
-    logSetterUsage('setMeetingDate', value ? value.format('YYYY-MM-DD') : undefined)
   }
 
   const testSetAppointmentTime = (value: dayjs.Dayjs | undefined) => {
@@ -316,9 +298,6 @@ function App() {
             </Button>
             <Button onClick={() => testSetDateRange([new Date(2025, 7, 1), new Date(2025, 7, 14)])}>
               Test setDateRange (Aug 1-14)
-            </Button>
-            <Button onClick={() => testSetMeetingDate(dayjs('2025-09-22'))}>
-              Test setMeetingDate (Sep 22, 2025)
             </Button>
             <Button onClick={() => testSetAppointmentTime(dayjs('2025-10-10T14:30:00'))}>
               Test setAppointmentTime (Oct 10, 2:30 PM)
@@ -746,22 +725,6 @@ function App() {
         </div>
         <Divider />
         <div>
-          <Title level={4}>Dayjs Date with Custom Format (Meeting Date)</Title>
-          <Space direction="vertical">
-            <DatePicker
-              value={meetingDate || null}
-              onChange={(date) => testSetMeetingDate(date || undefined)}
-              format="YYYY-MM-DD"
-              allowClear
-            />
-            <Text>Selected date: {meetingDate ? meetingDate.format('YYYY-MM-DD') : '(none)'}</Text>
-          </Space>
-          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
-            Using dayjs directly with a custom YYYY-MM-DD format
-          </Text>
-        </div>
-        <Divider />
-        <div>
           <Title level={4}>Date-Time (Appointment Time)</Title>
           <Space direction="vertical">
             <DatePicker
@@ -829,9 +792,6 @@ function App() {
             </Text>
             <Text>
               Date Range: {dateRange[0].toLocaleDateString()} to {dateRange[1].toLocaleDateString()}
-            </Text>
-            <Text>
-              Meeting Date (dayjs): {meetingDate ? meetingDate.format('YYYY-MM-DD') : '(none)'}
             </Text>
             <Text>
               Appointment Time:{' '}
