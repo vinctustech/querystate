@@ -1,7 +1,7 @@
 {
   "name": "@vinctus/querystate",
   "type": "module",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "URL query parameters as React state",
   "homepage": "https://github.com/vinctustech/querystate",
   "repository": {
