@@ -1,6 +1,7 @@
 // Ultra-simple implementation to get basic functionality working
 import { useSearchParams } from 'react-router-dom'
 
+// Base configs without defaults
 export interface StringConfig {
   type: 'string'
   defaultValue?: string
@@ -43,6 +44,49 @@ export interface BooleanArrayConfig {
   maxLength?: number
 }
 
+// More specific configs with required defaults
+export interface StringConfigWithDefault {
+  type: 'string'
+  defaultValue: string
+  minLength?: number
+  maxLength?: number
+}
+
+export interface NumberConfigWithDefault {
+  type: 'number'
+  defaultValue: number
+  min?: number
+  max?: number
+}
+
+export interface BooleanConfigWithDefault {
+  type: 'boolean'
+  defaultValue: boolean
+}
+
+export interface StringArrayConfigWithDefault {
+  type: 'stringArray'
+  defaultValue: string[]
+  minLength?: number
+  maxLength?: number
+}
+
+export interface NumberArrayConfigWithDefault {
+  type: 'numberArray'
+  defaultValue: number[]
+  minLength?: number
+  maxLength?: number
+  min?: number
+  max?: number
+}
+
+export interface BooleanArrayConfigWithDefault {
+  type: 'booleanArray'
+  defaultValue: boolean[]
+  minLength?: number
+  maxLength?: number
+}
+
 export type Config =
   | StringConfig
   | NumberConfig
@@ -50,6 +94,12 @@ export type Config =
   | StringArrayConfig
   | NumberArrayConfig
   | BooleanArrayConfig
+  | StringConfigWithDefault
+  | NumberConfigWithDefault
+  | BooleanConfigWithDefault
+  | StringArrayConfigWithDefault
+  | NumberArrayConfigWithDefault
+  | BooleanArrayConfigWithDefault
   | StringBuilder
   | NumberBuilder
   | BooleanBuilder
@@ -57,30 +107,62 @@ export type Config =
   | NumberArrayBuilder
   | BooleanArrayBuilder
 
+// Type helper to infer the value type from a config
+type InferConfigType<T extends Config> = 
+  T extends StringConfigWithDefault ? string :
+  T extends StringConfig ? string | undefined :
+  T extends StringBuilder ? string | undefined :
+  T extends NumberConfigWithDefault ? number :
+  T extends NumberConfig ? number | undefined :
+  T extends NumberBuilder ? number | undefined :
+  T extends BooleanConfigWithDefault ? boolean :
+  T extends BooleanConfig ? boolean | undefined :
+  T extends BooleanBuilder ? boolean | undefined :
+  T extends StringArrayConfigWithDefault ? string[] :
+  T extends StringArrayConfig ? string[] | undefined :
+  T extends StringArrayBuilder ? string[] | undefined :
+  T extends NumberArrayConfigWithDefault ? number[] :
+  T extends NumberArrayConfig ? number[] | undefined :
+  T extends NumberArrayBuilder ? number[] | undefined :
+  T extends BooleanArrayConfigWithDefault ? boolean[] :
+  T extends BooleanArrayConfig ? boolean[] | undefined :
+  T extends BooleanArrayBuilder ? boolean[] | undefined :
+  never
+
+// Type helper to create setter function type - always accepts undefined for clearing
+type SetterType<T> = (value: T | undefined) => void
+
+// Type helper to convert schema to return type
+type UseQueryStateReturnType<T extends Record<string, Config>> = {
+  [K in keyof T]: InferConfigType<T[K]>
+} & {
+  [K in keyof T as `set${Capitalize<string & K>}`]: SetterType<InferConfigType<T[K]>>
+}
+
 export interface StringBuilder {
   type: 'string'
   min(length: number): StringBuilder
   max(length: number): StringBuilder
-  default(value: string): StringConfig
+  default(value: string): StringConfigWithDefault
 }
 
 export interface NumberBuilder {
   type: 'number'
   min(value: number): NumberBuilder
   max(value: number): NumberBuilder
-  default(value: number): NumberConfig
+  default(value: number): NumberConfigWithDefault
 }
 
 export interface BooleanBuilder {
   type: 'boolean'
-  default(value: boolean): BooleanConfig
+  default(value: boolean): BooleanConfigWithDefault
 }
 
 export interface StringArrayBuilder {
   type: 'stringArray'
   min(length: number): StringArrayBuilder
   max(length: number): StringArrayBuilder
-  default(value: string[]): StringArrayConfig
+  default(value: string[]): StringArrayConfigWithDefault
 }
 
 export interface NumberArrayBuilder {
@@ -89,14 +171,14 @@ export interface NumberArrayBuilder {
   max(length: number): NumberArrayBuilder
   minValue(value: number): NumberArrayBuilder
   maxValue(value: number): NumberArrayBuilder
-  default(value: number[]): NumberArrayConfig
+  default(value: number[]): NumberArrayConfigWithDefault
 }
 
 export interface BooleanArrayBuilder {
   type: 'booleanArray'
   min(length: number): BooleanArrayBuilder
   max(length: number): BooleanArrayBuilder
-  default(value: boolean[]): BooleanArrayConfig
+  default(value: boolean[]): BooleanArrayConfigWithDefault
 }
 
 // String builder
@@ -112,7 +194,7 @@ export function string(): StringBuilder {
       return createBuilder({ ...config, maxLength: length })
     },
 
-    default(value: string): StringConfig {
+    default(value: string): StringConfigWithDefault {
       return { type: 'string', ...config, defaultValue: value }
     },
   })
@@ -133,7 +215,7 @@ export function number(): NumberBuilder {
       return createBuilder({ ...config, max: value })
     },
 
-    default(value: number): NumberConfig {
+    default(value: number): NumberConfigWithDefault {
       return { type: 'number', ...config, defaultValue: value }
     },
   })
@@ -146,7 +228,7 @@ export function boolean(): BooleanBuilder {
   const createBuilder = (config: Partial<BooleanConfig> = {}): BooleanBuilder => ({
     type: 'boolean',
 
-    default(value: boolean): BooleanConfig {
+    default(value: boolean): BooleanConfigWithDefault {
       return { type: 'boolean', ...config, defaultValue: value }
     },
   })
@@ -167,7 +249,7 @@ export function stringArray(): StringArrayBuilder {
       return createBuilder({ ...config, maxLength: length })
     },
 
-    default(value: string[]): StringArrayConfig {
+    default(value: string[]): StringArrayConfigWithDefault {
       return { type: 'stringArray', ...config, defaultValue: value }
     },
   })
@@ -196,7 +278,7 @@ export function numberArray(): NumberArrayBuilder {
       return createBuilder({ ...config, max: value })
     },
     
-    default(value: number[]): NumberArrayConfig {
+    default(value: number[]): NumberArrayConfigWithDefault {
       return { type: 'numberArray', ...config, defaultValue: value }
     },
   })
@@ -217,7 +299,7 @@ export function booleanArray(): BooleanArrayBuilder {
       return createBuilder({ ...config, maxLength: length })
     },
     
-    default(value: boolean[]): BooleanArrayConfig {
+    default(value: boolean[]): BooleanArrayConfigWithDefault {
       return { type: 'booleanArray', ...config, defaultValue: value }
     },
   })
@@ -504,7 +586,7 @@ function serializeValue(value: any, config: Config): string | undefined {
 let debugMessages: string[] = []
 
 // Main hook
-export function useQueryState<T extends Record<string, Config>>(schema: T): any {
+export function useQueryState<T extends Record<string, Config>>(schema: T): UseQueryStateReturnType<T> {
   const [searchParams, setSearchParams] = useSearchParams()
 
   // Clear debug messages on each hook call
