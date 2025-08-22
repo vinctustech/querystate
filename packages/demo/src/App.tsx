@@ -24,7 +24,19 @@ function App() {
     tags: queryState.stringArray().min(1).max(3).default(['react', 'typescript']),
     
     // Simple string array without constraints
-    categories: queryState.stringArray()
+    categories: queryState.stringArray(),
+    
+    // Number array with constraints
+    scores: queryState.numberArray().min(2).max(4).minValue(0).maxValue(100).default([85, 92]),
+    
+    // Simple number array without constraints
+    ratings: queryState.numberArray(),
+    
+    // Boolean array with constraints
+    features: queryState.booleanArray().min(1).max(3).default([true, false]),
+    
+    // Simple boolean array without constraints
+    flags: queryState.booleanArray()
   }
   
   const { 
@@ -35,7 +47,11 @@ function App() {
     isActive, setIsActive,
     hasDiscount, setHasDiscount,
     tags, setTags,
-    categories, setCategories
+    categories, setCategories,
+    scores, setScores,
+    ratings, setRatings,
+    features, setFeatures,
+    flags, setFlags
   } = useQueryState(schema)
   
   // Debug output
@@ -91,10 +107,34 @@ function App() {
     return <span style={{ color: '#fff' }}>{String(value)}</span>
   }
   
+  // Section separator styles
+  const majorSeparatorStyle = {
+    fontSize: '20px',
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    borderBottom: '2px solid #4CAF50',
+    paddingBottom: '8px',
+    marginBottom: '15px',
+    marginTop: '30px'
+  }
+  
+  const minorSeparatorStyle = {
+    fontSize: '16px',
+    fontWeight: 'bold',
+    color: '#2196F3',
+    borderBottom: '1px solid #2196F3',
+    paddingBottom: '4px',
+    marginBottom: '10px',
+    marginTop: '20px'
+  }
+  
   return (
     <div style={{ color: 'white', padding: '20px', fontFamily: 'monospace' }}>
       <h1><code>useQueryState</code> Demo App</h1>
       
+      <div style={majorSeparatorStyle}>📝 Single Value Types</div>
+      
+      <div style={minorSeparatorStyle}>String Parameters</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>String with constraints (min: 2, max: 10, default: 'John')</h3>
         <p>Name: {displayValue(name)}</p>
@@ -113,6 +153,21 @@ function App() {
       </div>
       
       <div style={{ marginBottom: '20px' }}>
+        <h3>Simple string (no constraints)</h3>
+        <p>Category: {displayValue(category)}</p>
+        <button style={buttonStyle} onClick={() => setCategory('electronics')}>
+          Set 'electronics'
+        </button>
+        <button style={buttonStyle} onClick={() => setCategory('books')}>
+          Set 'books'
+        </button>
+        <button style={clearButtonStyle} onClick={() => setCategory(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={minorSeparatorStyle}>Number Parameters</div>
+      <div style={{ marginBottom: '20px' }}>
         <h3>Number with constraints (min: 0, max: 120, default: 25)</h3>
         <p>Age: {displayValue(age)}</p>
         <button style={buttonStyle} onClick={() => setAge(-5)}>
@@ -125,20 +180,6 @@ function App() {
           Set 30 (valid)
         </button>
         <button style={clearButtonStyle} onClick={() => setAge(undefined)}>
-          Clear
-        </button>
-      </div>
-      
-      <div style={{ marginBottom: '20px' }}>
-        <h3>Simple string (no constraints)</h3>
-        <p>Category: {displayValue(category)}</p>
-        <button style={buttonStyle} onClick={() => setCategory('electronics')}>
-          Set 'electronics'
-        </button>
-        <button style={buttonStyle} onClick={() => setCategory('books')}>
-          Set 'books'
-        </button>
-        <button style={clearButtonStyle} onClick={() => setCategory(undefined)}>
           Clear
         </button>
       </div>
@@ -157,6 +198,7 @@ function App() {
         </button>
       </div>
       
+      <div style={minorSeparatorStyle}>Boolean Parameters</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>Boolean with default (default: true)</h3>
         <p>Is Active: {displayValue(isActive)}</p>
@@ -185,6 +227,9 @@ function App() {
         </button>
       </div>
       
+      <div style={majorSeparatorStyle}>🔢 Array Types</div>
+      
+      <div style={minorSeparatorStyle}>String Arrays</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>String array with constraints (min: 1, max: 3, default: ['react', 'typescript'])</h3>
         <p>Tags: {displayValue(Array.isArray(tags) ? tags.join(', ') : tags)}</p>
@@ -212,6 +257,73 @@ function App() {
           Set ['food', 'travel', 'health']
         </button>
         <button style={clearButtonStyle} onClick={() => setCategories(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={minorSeparatorStyle}>Number Arrays</div>
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Number array with constraints (min: 2, max: 4, values: 0-100, default: [85, 92])</h3>
+        <p>Scores: {displayValue(Array.isArray(scores) ? scores.join(', ') : scores)}</p>
+        <button style={buttonStyle} onClick={() => setScores([75])}>
+          Set [75] (too few items)
+        </button>
+        <button style={buttonStyle} onClick={() => setScores([60, 70, 80, 90, 95])}>
+          Set 5 items (will truncate to 4)
+        </button>
+        <button style={buttonStyle} onClick={() => setScores([-10, 150, 75])}>
+          Set [-10, 150, 75] (clamps to [0, 100, 75])
+        </button>
+        <button style={buttonStyle} onClick={() => setScores([88, 94, 91])}>
+          Set [88, 94, 91] (valid)
+        </button>
+        <button style={clearButtonStyle} onClick={() => setScores(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Simple number array (no constraints)</h3>
+        <p>Ratings: {displayValue(Array.isArray(ratings) ? ratings.join(', ') : ratings)}</p>
+        <button style={buttonStyle} onClick={() => setRatings([1, 2, 3])}>
+          Set [1, 2, 3]
+        </button>
+        <button style={buttonStyle} onClick={() => setRatings([4.5, 3.8, 2.1])}>
+          Set [4.5, 3.8, 2.1]
+        </button>
+        <button style={clearButtonStyle} onClick={() => setRatings(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={minorSeparatorStyle}>Boolean Arrays</div>
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Boolean array with constraints (min: 1, max: 3, default: [true, false])</h3>
+        <p>Features: {displayValue(Array.isArray(features) ? features.join(', ') : features)}</p>
+        <button style={buttonStyle} onClick={() => setFeatures([])}>
+          Set [] (too few)
+        </button>
+        <button style={buttonStyle} onClick={() => setFeatures([true, false, true, false])}>
+          Set 4 items (will truncate to 3)
+        </button>
+        <button style={buttonStyle} onClick={() => setFeatures([false, true])}>
+          Set [false, true] (valid)
+        </button>
+        <button style={clearButtonStyle} onClick={() => setFeatures(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Simple boolean array (no constraints)</h3>
+        <p>Flags: {displayValue(Array.isArray(flags) ? flags.join(', ') : flags)}</p>
+        <button style={buttonStyle} onClick={() => setFlags([true, true, false])}>
+          Set [true, true, false]
+        </button>
+        <button style={buttonStyle} onClick={() => setFlags([false])}>
+          Set [false]
+        </button>
+        <button style={clearButtonStyle} onClick={() => setFlags(undefined)}>
           Clear
         </button>
       </div>

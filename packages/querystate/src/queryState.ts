@@ -27,15 +27,35 @@ export interface StringArrayConfig {
   maxLength?: number
 }
 
-export type SimpleConfig =
+export interface NumberArrayConfig {
+  type: 'numberArray'
+  defaultValue?: number[]
+  minLength?: number
+  maxLength?: number
+  min?: number
+  max?: number
+}
+
+export interface BooleanArrayConfig {
+  type: 'booleanArray'
+  defaultValue?: boolean[]
+  minLength?: number
+  maxLength?: number
+}
+
+export type Config =
   | StringConfig
   | NumberConfig
   | BooleanConfig
   | StringArrayConfig
+  | NumberArrayConfig
+  | BooleanArrayConfig
   | StringBuilder
   | NumberBuilder
   | BooleanBuilder
   | StringArrayBuilder
+  | NumberArrayBuilder
+  | BooleanArrayBuilder
 
 export interface StringBuilder {
   type: 'string'
@@ -61,6 +81,22 @@ export interface StringArrayBuilder {
   min(length: number): StringArrayBuilder
   max(length: number): StringArrayBuilder
   default(value: string[]): StringArrayConfig
+}
+
+export interface NumberArrayBuilder {
+  type: 'numberArray'
+  min(length: number): NumberArrayBuilder
+  max(length: number): NumberArrayBuilder
+  minValue(value: number): NumberArrayBuilder
+  maxValue(value: number): NumberArrayBuilder
+  default(value: number[]): NumberArrayConfig
+}
+
+export interface BooleanArrayBuilder {
+  type: 'booleanArray'
+  min(length: number): BooleanArrayBuilder
+  max(length: number): BooleanArrayBuilder
+  default(value: boolean[]): BooleanArrayConfig
 }
 
 // String builder
@@ -139,8 +175,58 @@ export function stringArray(): StringArrayBuilder {
   return createBuilder()
 }
 
+// Number array builder
+export function numberArray(): NumberArrayBuilder {
+  const createBuilder = (config: Partial<NumberArrayConfig> = {}): NumberArrayBuilder => ({
+    type: 'numberArray',
+    
+    min(length: number): NumberArrayBuilder {
+      return createBuilder({ ...config, minLength: length })
+    },
+    
+    max(length: number): NumberArrayBuilder {
+      return createBuilder({ ...config, maxLength: length })
+    },
+    
+    minValue(value: number): NumberArrayBuilder {
+      return createBuilder({ ...config, min: value })
+    },
+    
+    maxValue(value: number): NumberArrayBuilder {
+      return createBuilder({ ...config, max: value })
+    },
+    
+    default(value: number[]): NumberArrayConfig {
+      return { type: 'numberArray', ...config, defaultValue: value }
+    },
+  })
+  
+  return createBuilder()
+}
+
+// Boolean array builder
+export function booleanArray(): BooleanArrayBuilder {
+  const createBuilder = (config: Partial<BooleanArrayConfig> = {}): BooleanArrayBuilder => ({
+    type: 'booleanArray',
+    
+    min(length: number): BooleanArrayBuilder {
+      return createBuilder({ ...config, minLength: length })
+    },
+    
+    max(length: number): BooleanArrayBuilder {
+      return createBuilder({ ...config, maxLength: length })
+    },
+    
+    default(value: boolean[]): BooleanArrayConfig {
+      return { type: 'booleanArray', ...config, defaultValue: value }
+    },
+  })
+  
+  return createBuilder()
+}
+
 // Parse and validate values from URL
-function parseValue(rawValue: string | null, config: SimpleConfig): any {
+function parseValue(rawValue: string | null, config: Config): any {
   const defaultValue = getDefaultValue(config)
 
   if (rawValue === null) {
@@ -211,11 +297,66 @@ function parseValue(rawValue: string | null, config: SimpleConfig): any {
     return value
   }
 
+  if (config.type === 'numberArray') {
+    // Parse comma-separated string into number array
+    const parsed = rawValue.split(',').map(v => parseFloat(v))
+    
+    // Check for invalid numbers
+    if (parsed.some(isNaN)) {
+      return defaultValue
+    }
+    
+    // Apply value constraints to each number
+    const min = getMin(config)
+    const max = getMax(config)
+    let value = parsed.map(n => {
+      let num = n
+      if (min !== undefined && num < min) num = min
+      if (max !== undefined && num > max) num = max
+      return num
+    })
+
+    // Apply array length constraints
+    const minLength = getMinLength(config)
+    const maxLength = getMaxLength(config)
+
+    if (minLength && value.length < minLength) {
+      return defaultValue
+    }
+    if (maxLength && value.length > maxLength) {
+      value = value.slice(0, maxLength)
+    }
+
+    return value
+  }
+
+  if (config.type === 'booleanArray') {
+    // Parse comma-separated string into boolean array
+    const parsed = rawValue.split(',').map(v => {
+      const lower = v.toLowerCase().trim()
+      return lower === 'true' || lower === '1' || lower === 'yes'
+    })
+    let value = parsed
+
+    // Apply array constraints
+    const minLength = getMinLength(config)
+    const maxLength = getMaxLength(config)
+
+    if (minLength && value.length < minLength) {
+      return defaultValue
+    }
+    if (maxLength && value.length > maxLength) {
+      value = value.slice(0, maxLength)
+    }
+
+    return value
+  }
+
   return rawValue
 }
 
 // Validate and process values before setting in URL
-function validateValue(value: any, config: SimpleConfig): any {
+function validateValue(value: any, config: Config): any {
   const defaultValue = getDefaultValue(config)
 
   if (value === undefined || value === null) {
@@ -285,11 +426,64 @@ function validateValue(value: any, config: SimpleConfig): any {
     return validatedValue
   }
 
+  if (config.type === 'numberArray') {
+    // Number array validation
+    const arrayValue = Array.isArray(value) ? value : [value]
+    
+    // Convert to numbers and validate
+    const parsed = arrayValue.map(v => typeof v === 'number' ? v : parseFloat(String(v)))
+    if (parsed.some(isNaN)) {
+      return defaultValue
+    }
+    
+    // Apply value constraints to each number
+    const min = getMin(config)
+    const max = getMax(config)
+    let validatedValue = parsed.map(n => {
+      let num = n
+      if (min !== undefined && num < min) num = min
+      if (max !== undefined && num > max) num = max
+      return num
+    })
+
+    // Apply array length constraints
+    const minLength = getMinLength(config)
+    const maxLength = getMaxLength(config)
+
+    if (minLength && validatedValue.length < minLength) {
+      return defaultValue
+    }
+    if (maxLength && validatedValue.length > maxLength) {
+      validatedValue = validatedValue.slice(0, maxLength)
+    }
+
+    return validatedValue
+  }
+
+  if (config.type === 'booleanArray') {
+    // Boolean array validation
+    const arrayValue = Array.isArray(value) ? value : [value]
+    let validatedValue = arrayValue.map((item) => Boolean(item))
+
+    // Apply array constraints
+    const minLength = getMinLength(config)
+    const maxLength = getMaxLength(config)
+
+    if (minLength && validatedValue.length < minLength) {
+      return defaultValue
+    }
+    if (maxLength && validatedValue.length > maxLength) {
+      validatedValue = validatedValue.slice(0, maxLength)
+    }
+
+    return validatedValue
+  }
+
   return value
 }
 
 // Serialize values for URL
-function serializeValue(value: any, config: SimpleConfig): string | undefined {
+function serializeValue(value: any, config: Config): string | undefined {
   if (value === undefined || value === null) {
     return undefined
   }
@@ -310,7 +504,7 @@ function serializeValue(value: any, config: SimpleConfig): string | undefined {
 let debugMessages: string[] = []
 
 // Main hook
-export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T): any {
+export function useQueryState<T extends Record<string, Config>>(schema: T): any {
   const [searchParams, setSearchParams] = useSearchParams()
 
   // Clear debug messages on each hook call
@@ -319,7 +513,8 @@ export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T)
   // Check if defaults need to be applied to URL on initial load
   const needsDefaultsApplied = Object.entries(schema).some(([key, config]) => {
     const arrayKey = key + '[]'
-    const hasArrayValue = config.type === 'stringArray' && searchParams.has(arrayKey)
+    const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+    const hasArrayValue = isArrayType && searchParams.has(arrayKey)
     const hasRegularValue = searchParams.has(key)
     const hasValue = hasArrayValue || hasRegularValue
     const hasDefault = getDefaultValue(config) !== undefined
@@ -347,21 +542,25 @@ export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T)
 
       Object.entries(schema).forEach(([key, config]) => {
         const arrayKey = key + '[]'
-        const hasArrayValue = config.type === 'stringArray' && paramsWithDefaults.has(arrayKey)
+        const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+        const hasArrayValue = isArrayType && paramsWithDefaults.has(arrayKey)
         const hasRegularValue = paramsWithDefaults.has(key)
-        
+
         if (!hasArrayValue && !hasRegularValue) {
           const defaultValue = getDefaultValue(config)
           timeoutDebugMessages.push(
             `DEBUG: setTimeout - Setting ${key} to default: ${defaultValue}`,
           )
           if (defaultValue !== undefined) {
-            if (config.type === 'stringArray' && Array.isArray(defaultValue)) {
+            const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+            if (isArrayType && Array.isArray(defaultValue)) {
               // For arrays, use param[] syntax - set multiple entries
-              defaultValue.forEach(item => {
+              defaultValue.forEach((item) => {
                 paramsWithDefaults.append(arrayKey, String(item))
               })
-              timeoutDebugMessages.push(`DEBUG: setTimeout - Set array ${arrayKey} with ${defaultValue.length} items`)
+              timeoutDebugMessages.push(
+                `DEBUG: setTimeout - Set array ${arrayKey} with ${defaultValue.length} items`,
+              )
             } else {
               const serialized = serializeValue(defaultValue, config)
               timeoutDebugMessages.push(`DEBUG: setTimeout - Serialized ${key}: ${serialized}`)
@@ -403,7 +602,8 @@ export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T)
       } else {
         // Use current parsed value
         let rawValue: string | null
-        if (config.type === 'stringArray') {
+        const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+        if (isArrayType) {
           // For arrays, use param[] syntax with URLSearchParams.getAll()
           const arrayKey = key + '[]'
           const arrayValues = searchParams.getAll(arrayKey)
@@ -416,11 +616,12 @@ export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T)
 
       // Validate the value before setting
       const validatedValue = validateValue(valueToUse, config)
-      
-      if (config.type === 'stringArray' && Array.isArray(validatedValue)) {
+
+      const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+      if (isArrayType && Array.isArray(validatedValue)) {
         // For arrays, use param[] syntax - set multiple entries
         const arrayKey = key + '[]'
-        validatedValue.forEach(item => {
+        validatedValue.forEach((item) => {
           newParams.append(arrayKey, String(item))
         })
       } else {
@@ -438,7 +639,8 @@ export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T)
   Object.entries(schema).forEach(([key, config]) => {
     // Get and parse current value
     let rawValue: string | null
-    if (config.type === 'stringArray') {
+    const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+    if (isArrayType) {
       // For arrays, use param[] syntax with URLSearchParams.getAll()
       const arrayKey = key + '[]'
       const arrayValues = searchParams.getAll(arrayKey)
@@ -461,7 +663,7 @@ export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T)
 }
 
 // Helper function to get config values from builder or config objects
-function getConfigValue<T>(obj: SimpleConfig, key: string): T | undefined {
+function getConfigValue<T>(obj: Config, key: string): T | undefined {
   // For config objects, access directly
   if ('defaultValue' in obj || !('min' in obj && typeof obj.min === 'function')) {
     return (obj as any)[key]
@@ -470,23 +672,23 @@ function getConfigValue<T>(obj: SimpleConfig, key: string): T | undefined {
   return undefined
 }
 
-function getDefaultValue(config: SimpleConfig): any {
+function getDefaultValue(config: Config): any {
   return getConfigValue(config, 'defaultValue')
 }
 
-function getMinLength(config: SimpleConfig): number | undefined {
+function getMinLength(config: Config): number | undefined {
   return getConfigValue(config, 'minLength')
 }
 
-function getMaxLength(config: SimpleConfig): number | undefined {
+function getMaxLength(config: Config): number | undefined {
   return getConfigValue(config, 'maxLength')
 }
 
-function getMin(config: SimpleConfig): number | undefined {
+function getMin(config: Config): number | undefined {
   return getConfigValue(config, 'min')
 }
 
-function getMax(config: SimpleConfig): number | undefined {
+function getMax(config: Config): number | undefined {
   return getConfigValue(config, 'max')
 }
 
@@ -496,4 +698,6 @@ export const queryState = {
   number,
   boolean,
   stringArray,
+  numberArray,
+  booleanArray,
 }
