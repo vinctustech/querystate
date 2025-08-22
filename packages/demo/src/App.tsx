@@ -5,6 +5,15 @@ function App() {
     // String with constraints
     name: queryState.string().min(2).max(10).default('John'),
     
+    // String transformations
+    username: queryState.string().min(3).max(20).lowercase().default('user123'),
+    displayName: queryState.string().min(2).max(30).uppercase(),
+    
+    // String validations
+    email: queryState.string().email().default('user@example.com'),
+    website: queryState.string().url(),
+    userId: queryState.string().uuid(),
+    
     // Number with constraints  
     age: queryState.number().min(0).max(120).default(25),
     
@@ -40,7 +49,12 @@ function App() {
   }
   
   const { 
-    name, setName, 
+    name, setName,
+    username, setUsername,
+    displayName, setDisplayName,
+    email, setEmail,
+    website, setWebsite,
+    userId, setUserId,
     age, setAge, 
     category, setCategory, 
     score, setScore,
@@ -162,6 +176,93 @@ function App() {
           Set 'books'
         </button>
         <button style={clearButtonStyle} onClick={() => setCategory(undefined)}>
+          Clear
+        </button>
+      </div>
+
+      <div style={minorSeparatorStyle}>String Transformations</div>
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Lowercase string (min: 3, max: 20, default: 'user123')</h3>
+        <p>Username: {displayValue(username)}</p>
+        <button style={buttonStyle} onClick={() => setUsername('HELLO')}>
+          Set 'HELLO' (converts to lowercase)
+        </button>
+        <button style={buttonStyle} onClick={() => setUsername('Alice_2024')}>
+          Set 'Alice_2024' (converts to lowercase)
+        </button>
+        <button style={buttonStyle} onClick={() => setUsername('ab')}>
+          Set 'ab' (too short)
+        </button>
+        <button style={clearButtonStyle} onClick={() => setUsername(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Uppercase string (min: 2, max: 30)</h3>
+        <p>Display Name: {displayValue(displayName)}</p>
+        <button style={buttonStyle} onClick={() => setDisplayName('hello world')}>
+          Set 'hello world' (converts to uppercase)
+        </button>
+        <button style={buttonStyle} onClick={() => setDisplayName('admin')}>
+          Set 'admin' (converts to uppercase)
+        </button>
+        <button style={buttonStyle} onClick={() => setDisplayName('a')}>
+          Set 'a' (too short)
+        </button>
+        <button style={clearButtonStyle} onClick={() => setDisplayName(undefined)}>
+          Clear
+        </button>
+      </div>
+
+      <div style={minorSeparatorStyle}>String Validations</div>
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Email validation (default: 'user@example.com')</h3>
+        <p>Email: {displayValue(email)}</p>
+        <button style={buttonStyle} onClick={() => setEmail('test@domain.com')}>
+          Set 'test@domain.com' (valid)
+        </button>
+        <button style={buttonStyle} onClick={() => setEmail('invalid-email')}>
+          Set 'invalid-email' (invalid)
+        </button>
+        <button style={buttonStyle} onClick={() => setEmail('user@test.org')}>
+          Set 'user@test.org' (valid)
+        </button>
+        <button style={clearButtonStyle} onClick={() => setEmail(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <h3>URL validation</h3>
+        <p>Website: {displayValue(website)}</p>
+        <button style={buttonStyle} onClick={() => setWebsite('https://example.com')}>
+          Set 'https://example.com' (valid)
+        </button>
+        <button style={buttonStyle} onClick={() => setWebsite('not-a-url')}>
+          Set 'not-a-url' (invalid)
+        </button>
+        <button style={buttonStyle} onClick={() => setWebsite('http://localhost:3000')}>
+          Set 'http://localhost:3000' (valid)
+        </button>
+        <button style={clearButtonStyle} onClick={() => setWebsite(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <h3>UUID validation</h3>
+        <p>User ID: {displayValue(userId)}</p>
+        <button style={buttonStyle} onClick={() => setUserId('550e8400-e29b-41d4-a716-446655440000')}>
+          Set valid UUID
+        </button>
+        <button style={buttonStyle} onClick={() => setUserId('invalid-uuid')}>
+          Set 'invalid-uuid' (invalid)
+        </button>
+        <button style={buttonStyle} onClick={() => setUserId('123e4567-e89b-12d3-a456-426614174000')}>
+          Set another valid UUID
+        </button>
+        <button style={clearButtonStyle} onClick={() => setUserId(undefined)}>
           Clear
         </button>
       </div>

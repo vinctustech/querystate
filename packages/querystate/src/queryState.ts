@@ -7,6 +7,11 @@ export interface StringConfig {
   defaultValue?: string
   minLength?: number
   maxLength?: number
+  lowercase?: boolean
+  uppercase?: boolean
+  email?: boolean
+  url?: boolean
+  uuid?: boolean
 }
 
 export interface NumberConfig {
@@ -50,6 +55,11 @@ export interface StringConfigWithDefault {
   defaultValue: string
   minLength?: number
   maxLength?: number
+  lowercase?: boolean
+  uppercase?: boolean
+  email?: boolean
+  url?: boolean
+  uuid?: boolean
 }
 
 export interface NumberConfigWithDefault {
@@ -141,8 +151,14 @@ type UseQueryStateReturnType<T extends Record<string, Config>> = {
 
 export interface StringBuilder {
   type: 'string'
+  _config: Partial<StringConfig> // Expose internal config
   min(length: number): StringBuilder
   max(length: number): StringBuilder
+  lowercase(): StringBuilder
+  uppercase(): StringBuilder
+  email(): StringBuilder
+  url(): StringBuilder
+  uuid(): StringBuilder
   default(value: string): StringConfigWithDefault
 }
 
@@ -185,6 +201,7 @@ export interface BooleanArrayBuilder {
 export function string(): StringBuilder {
   const createBuilder = (config: Partial<StringConfig> = {}): StringBuilder => ({
     type: 'string',
+    _config: config,
 
     min(length: number): StringBuilder {
       return createBuilder({ ...config, minLength: length })
@@ -192,6 +209,26 @@ export function string(): StringBuilder {
 
     max(length: number): StringBuilder {
       return createBuilder({ ...config, maxLength: length })
+    },
+
+    lowercase(): StringBuilder {
+      return createBuilder({ ...config, lowercase: true })
+    },
+
+    uppercase(): StringBuilder {
+      return createBuilder({ ...config, uppercase: true })
+    },
+
+    email(): StringBuilder {
+      return createBuilder({ ...config, email: true })
+    },
+
+    url(): StringBuilder {
+      return createBuilder({ ...config, url: true })
+    },
+
+    uuid(): StringBuilder {
+      return createBuilder({ ...config, uuid: true })
     },
 
     default(value: string): StringConfigWithDefault {
@@ -318,7 +355,17 @@ function parseValue(rawValue: string | null, config: Config): any {
   if (config.type === 'string') {
     let value = rawValue
 
-    // Apply string constraints
+    // Apply transformation constraints first
+    const isLowercase = getConfigValue(config, 'lowercase')
+    const isUppercase = getConfigValue(config, 'uppercase')
+    
+    if (isLowercase) {
+      value = value.toLowerCase()
+    } else if (isUppercase) {
+      value = value.toUpperCase()
+    }
+
+    // Apply length constraints
     const minLength = getMinLength(config)
     const maxLength = getMaxLength(config)
 
@@ -327,6 +374,21 @@ function parseValue(rawValue: string | null, config: Config): any {
     }
     if (maxLength && value.length > maxLength) {
       value = value.substring(0, maxLength)
+    }
+
+    // Apply validation constraints
+    const isEmail = getConfigValue(config, 'email')
+    const isUrl = getConfigValue(config, 'url')
+    const isUuid = getConfigValue(config, 'uuid')
+
+    if (isEmail && !isValidEmail(value)) {
+      return defaultValue
+    }
+    if (isUrl && !isValidUrl(value)) {
+      return defaultValue
+    }
+    if (isUuid && !isValidUuid(value)) {
+      return defaultValue
     }
 
     return value
@@ -448,7 +510,17 @@ function validateValue(value: any, config: Config): any {
   if (config.type === 'string') {
     let stringValue = String(value)
 
-    // Apply string constraints
+    // Apply transformation constraints first
+    const isLowercase = getConfigValue(config, 'lowercase')
+    const isUppercase = getConfigValue(config, 'uppercase')
+    
+    if (isLowercase) {
+      stringValue = stringValue.toLowerCase()
+    } else if (isUppercase) {
+      stringValue = stringValue.toUpperCase()
+    }
+
+    // Apply length constraints
     const minLength = getMinLength(config)
     const maxLength = getMaxLength(config)
 
@@ -457,6 +529,21 @@ function validateValue(value: any, config: Config): any {
     }
     if (maxLength && stringValue.length > maxLength) {
       stringValue = stringValue.substring(0, maxLength)
+    }
+
+    // Apply validation constraints
+    const isEmail = getConfigValue(config, 'email')
+    const isUrl = getConfigValue(config, 'url')
+    const isUuid = getConfigValue(config, 'uuid')
+
+    if (isEmail && !isValidEmail(stringValue)) {
+      return defaultValue
+    }
+    if (isUrl && !isValidUrl(stringValue)) {
+      return defaultValue
+    }
+    if (isUuid && !isValidUuid(stringValue)) {
+      return defaultValue
     }
 
     return stringValue
@@ -750,7 +837,13 @@ function getConfigValue<T>(obj: Config, key: string): T | undefined {
   if ('defaultValue' in obj || !('min' in obj && typeof obj.min === 'function')) {
     return (obj as any)[key]
   }
-  // For builder objects, these properties aren't accessible - return undefined
+  
+  // For StringBuilder objects, check the _config property
+  if ('_config' in obj && obj._config) {
+    return (obj._config as any)[key]
+  }
+  
+  // For other builder objects, these properties aren't accessible - return undefined
   return undefined
 }
 
@@ -772,6 +865,28 @@ function getMin(config: Config): number | undefined {
 
 function getMax(config: Config): number | undefined {
   return getConfigValue(config, 'max')
+}
+
+// String validation functions
+function isValidEmail(email: string): boolean {
+  // Simple email regex for basic validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
+function isValidUrl(url: string): boolean {
+  try {
+    new URL(url)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function isValidUuid(uuid: string): boolean {
+  // UUID v4 regex
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidRegex.test(uuid)
 }
 
 // Main queryState object
