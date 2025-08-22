@@ -182,8 +182,10 @@ export interface StringArrayBuilder {
 
 export interface NumberBuilder {
   type: 'number'
+  _config: Partial<NumberConfig>
   min(value: number): NumberBuilder
   max(value: number): NumberBuilder
+  array(): NumberArrayBuilder
   default(value: number): NumberConfigWithDefault
 }
 
@@ -195,6 +197,7 @@ export interface BooleanBuilder {
 
 export interface NumberArrayBuilder {
   type: 'numberArray'
+  _config: Partial<NumberArrayConfig>
   min(length: number): NumberArrayBuilder
   max(length: number): NumberArrayBuilder
   minValue(value: number): NumberArrayBuilder
@@ -286,6 +289,7 @@ export function string(): StringBuilder {
 export function number(): NumberBuilder {
   const createBuilder = (config: Partial<NumberConfig> = {}): NumberBuilder => ({
     type: 'number',
+    _config: config,
 
     min(value: number): NumberBuilder {
       return createBuilder({ ...config, min: value })
@@ -293,6 +297,40 @@ export function number(): NumberBuilder {
 
     max(value: number): NumberBuilder {
       return createBuilder({ ...config, max: value })
+    },
+
+    array(): NumberArrayBuilder {
+      // Create a NumberArrayBuilder with the number constraints
+      const createNumberArrayBuilder = (arrayConfig: Partial<NumberArrayConfig> = {}): NumberArrayBuilder => ({
+        type: 'numberArray',
+        _config: arrayConfig,
+
+        min(length: number): NumberArrayBuilder {
+          return createNumberArrayBuilder({ ...arrayConfig, minLength: length })
+        },
+
+        max(length: number): NumberArrayBuilder {
+          return createNumberArrayBuilder({ ...arrayConfig, maxLength: length })
+        },
+
+        minValue(value: number): NumberArrayBuilder {
+          return createNumberArrayBuilder({ ...arrayConfig, min: value })
+        },
+
+        maxValue(value: number): NumberArrayBuilder {
+          return createNumberArrayBuilder({ ...arrayConfig, max: value })
+        },
+
+        default(value: number[]): NumberArrayConfigWithDefault {
+          return { type: 'numberArray', ...arrayConfig, defaultValue: value }
+        },
+      })
+
+      return createNumberArrayBuilder({
+        // Copy over the number constraints from the NumberBuilder
+        min: config.min,
+        max: config.max,
+      })
     },
 
     default(value: number): NumberConfigWithDefault {
@@ -342,6 +380,7 @@ export function stringArray(): StringArrayBuilder {
 export function numberArray(): NumberArrayBuilder {
   const createBuilder = (config: Partial<NumberArrayConfig> = {}): NumberArrayBuilder => ({
     type: 'numberArray',
+    _config: config,
     
     min(length: number): NumberArrayBuilder {
       return createBuilder({ ...config, minLength: length })

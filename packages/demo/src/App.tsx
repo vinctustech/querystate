@@ -35,11 +35,11 @@ function App() {
     // Simple string array without constraints
     categories: queryState.string().array(),
     
-    // Number array with constraints
-    scores: queryState.numberArray().min(2).max(4).minValue(0).maxValue(100).default([85, 92]),
+    // Number array with constraints (values 0-100, array 2-4 items)
+    scores: queryState.number().min(0).max(100).array().min(2).max(4).default([85, 92]),
     
     // Simple number array without constraints
-    ratings: queryState.numberArray(),
+    ratings: queryState.number().array(),
     
     // Boolean array with constraints
     features: queryState.booleanArray().min(1).max(3).default([true, false]),
