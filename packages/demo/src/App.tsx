@@ -64,7 +64,29 @@ function App() {
     fullName: qs.string().min(2).tuple(2),
     
     // String tuple with default (exactly 2 strings, min 2 chars each) - like default name  
-    defaultName: { ...qs.string().min(2).tuple(2), defaultValue: ['Default', 'User'] } as any
+    defaultName: { ...qs.string().min(2).tuple(2), defaultValue: ['Default', 'User'] } as any,
+
+    // === DATE TYPES ===
+    
+    // Basic date with default (today)
+    startDate: qs.date().default(new Date()),
+    
+    // Future date only
+    eventDate: qs.date().future(),
+    
+    // Date with min/max bounds
+    deadline: qs.date()
+      .min(new Date('2024-01-01'))
+      .max(new Date('2024-12-31')),
+    
+    // Date range as tuple (exactly 2 dates)
+    dateRange: qs.date().tuple(2),
+    
+    // Date range with default (exactly 2 dates)
+    defaultDateRange: { 
+      ...qs.date().min(new Date('2024-01-01')).tuple(2), 
+      defaultValue: [new Date('2024-06-01'), new Date('2024-06-30')] 
+    } as any
   }
   
   const { 
@@ -86,7 +108,12 @@ function App() {
     features, setFeatures,
     flags, setFlags,
     fullName, setFullName,
-    defaultName, setDefaultName
+    defaultName, setDefaultName,
+    startDate, setStartDate,
+    eventDate, setEventDate,
+    deadline, setDeadline,
+    dateRange, setDateRange,
+    defaultDateRange, setDefaultDateRange
   } = useQueryState(schema)
   
   // Debug output
@@ -486,6 +513,86 @@ function App() {
           Set ['A', 'Test'] (first too short)
         </button>
         <button style={clearButtonStyle} onClick={() => setDefaultName(undefined)}>
+          Clear (revert to default)
+        </button>
+      </div>
+      
+      <div style={majorSeparatorStyle}>📅 Date Types</div>
+      
+      <div style={minorSeparatorStyle}>Basic Dates</div>
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Date with default (default: today)</h3>
+        <p>Start Date: {displayValue(startDate ? startDate.toISOString() : startDate)}</p>
+        <button style={buttonStyle} onClick={() => setStartDate(new Date('2024-06-15'))}>
+          Set June 15, 2024
+        </button>
+        <button style={buttonStyle} onClick={() => setStartDate(new Date('2025-12-25'))}>
+          Set December 25, 2025
+        </button>
+        <button style={clearButtonStyle} onClick={() => setStartDate(undefined)}>
+          Clear (revert to default)
+        </button>
+      </div>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Future date only</h3>
+        <p>Event Date: {displayValue(eventDate ? eventDate.toISOString() : eventDate)}</p>
+        <button style={buttonStyle} onClick={() => setEventDate(new Date('2020-01-01'))}>
+          Set 2020 date (past - should fail)
+        </button>
+        <button style={buttonStyle} onClick={() => setEventDate(new Date('2025-06-01'))}>
+          Set June 1, 2025 (future)
+        </button>
+        <button style={buttonStyle} onClick={() => setEventDate(new Date(Date.now() + 86400000))}>
+          Set tomorrow (valid)
+        </button>
+        <button style={clearButtonStyle} onClick={() => setEventDate(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Date with min/max bounds (2024 only)</h3>
+        <p>Deadline: {displayValue(deadline ? deadline.toISOString() : deadline)}</p>
+        <button style={buttonStyle} onClick={() => setDeadline(new Date('2023-12-31'))}>
+          Set 2023 date (too early)
+        </button>
+        <button style={buttonStyle} onClick={() => setDeadline(new Date('2025-01-01'))}>
+          Set 2025 date (too late)
+        </button>
+        <button style={buttonStyle} onClick={() => setDeadline(new Date('2024-07-04'))}>
+          Set July 4, 2024 (valid)
+        </button>
+        <button style={clearButtonStyle} onClick={() => setDeadline(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={minorSeparatorStyle}>Date Tuples</div>
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Date range as tuple (exactly 2 dates)</h3>
+        <p>Date Range: {displayValue(Array.isArray(dateRange) ? dateRange.map(d => d?.toISOString()).join(' to ') : dateRange)}</p>
+        <button style={buttonStyle} onClick={() => setDateRange([new Date('2024-06-01'), new Date('2024-06-30')])}>
+          Set June 2024 range
+        </button>
+        <button style={buttonStyle} onClick={() => setDateRange([new Date('2024-12-01'), new Date('2024-12-31')])}>
+          Set December 2024 range
+        </button>
+        <button style={clearButtonStyle} onClick={() => setDateRange(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Date range with default (exactly 2 dates, min: 2024-01-01, default: June 2024)</h3>
+        <p>Default Date Range: {displayValue(Array.isArray(defaultDateRange) ? defaultDateRange.map(d => d?.toISOString()).join(' to ') : defaultDateRange)}</p>
+        <button style={buttonStyle} onClick={() => setDefaultDateRange([new Date('2024-08-01'), new Date('2024-08-31')])}>
+          Set August 2024 range
+        </button>
+        <button style={buttonStyle} onClick={() => setDefaultDateRange([new Date('2023-01-01'), new Date('2023-01-31')])}>
+          Set 2023 range (before min)
+        </button>
+        <button style={clearButtonStyle} onClick={() => setDefaultDateRange(undefined)}>
           Clear (revert to default)
         </button>
       </div>

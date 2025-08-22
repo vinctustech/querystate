@@ -369,6 +369,9 @@ type InferConfigType<T extends Config> =
   T extends BooleanConfigWithDefault ? boolean :
   T extends BooleanConfig ? boolean | undefined :
   T extends BooleanBuilder ? boolean | undefined :
+  T extends DateConfigWithDefault ? Date :
+  T extends DateConfig ? Date | undefined :
+  T extends DateBuilder ? Date | undefined :
   T extends StringArrayConfigWithDefault ? string[] :
   T extends StringArrayConfig ? string[] | undefined :
   T extends StringArrayBuilder ? string[] | undefined :
@@ -378,6 +381,9 @@ type InferConfigType<T extends Config> =
   T extends BooleanArrayConfigWithDefault ? boolean[] :
   T extends BooleanArrayConfig ? boolean[] | undefined :
   T extends BooleanArrayBuilder ? boolean[] | undefined :
+  T extends DateArrayConfigWithDefault ? Date[] :
+  T extends DateArrayConfig ? Date[] | undefined :
+  T extends DateArrayBuilder ? Date[] | undefined :
   T extends StringTuple2ConfigWithDefault ? [string, string] :
   T extends StringTuple2Config ? [string, string] | undefined :
   T extends StringTuple2Builder ? [string, string] | undefined :
@@ -385,6 +391,8 @@ type InferConfigType<T extends Config> =
   T extends NumberTuple2Config ? [number, number] | undefined :
   T extends BooleanTuple2ConfigWithDefault ? [boolean, boolean] :
   T extends BooleanTuple2Config ? [boolean, boolean] | undefined :
+  T extends DateTuple2ConfigWithDefault ? [Date, Date] :
+  T extends DateTuple2Config ? [Date, Date] | undefined :
   never
 
 // Type helper to create setter function type - always accepts undefined for clearing
@@ -910,6 +918,37 @@ function parseValue(rawValue: string | null, config: Config): any {
     return lowerValue === 'true' || lowerValue === '1' || lowerValue === 'yes'
   }
 
+  if (config.type === 'date') {
+    // Parse ISO date string
+    const parsed = new Date(rawValue)
+    
+    // Check if date is valid
+    if (isNaN(parsed.getTime())) {
+      return defaultValue
+    }
+
+    // Apply date constraints
+    const min = getConfigValue(config, 'min')
+    const max = getConfigValue(config, 'max')
+    const future = getConfigValue(config, 'future')
+    const past = getConfigValue(config, 'past')
+
+    if (min && parsed < min) {
+      return defaultValue
+    }
+    if (max && parsed > max) {
+      return defaultValue
+    }
+    if (future && parsed <= new Date()) {
+      return defaultValue
+    }
+    if (past && parsed >= new Date()) {
+      return defaultValue
+    }
+
+    return parsed
+  }
+
   if (config.type === 'stringArray') {
     // Parse comma-separated string into array
     const parsed = rawValue.split(',')
@@ -1124,6 +1163,43 @@ function validateValue(value: any, config: Config): any {
     return Boolean(value)
   }
 
+  if (config.type === 'date') {
+    // Date validation
+    let dateValue: Date
+    
+    if (value instanceof Date) {
+      dateValue = value
+    } else {
+      dateValue = new Date(String(value))
+    }
+    
+    // Check if date is valid
+    if (isNaN(dateValue.getTime())) {
+      return defaultValue
+    }
+
+    // Apply date constraints
+    const min = getConfigValue(config, 'min')
+    const max = getConfigValue(config, 'max')
+    const future = getConfigValue(config, 'future')
+    const past = getConfigValue(config, 'past')
+
+    if (min && dateValue < min) {
+      return defaultValue
+    }
+    if (max && dateValue > max) {
+      return defaultValue
+    }
+    if (future && dateValue <= new Date()) {
+      return defaultValue
+    }
+    if (past && dateValue >= new Date()) {
+      return defaultValue
+    }
+
+    return dateValue
+  }
+
   if (config.type === 'stringArray') {
     // String array validation
     const arrayValue = Array.isArray(value) ? value : [String(value)]
@@ -1276,6 +1352,11 @@ function serializeValue(value: any, config: Config): string | undefined {
 
   if (config.type === 'number') {
     return value.toString()
+  }
+
+  if (config.type === 'date') {
+    // Serialize date as ISO string
+    return value instanceof Date ? value.toISOString() : String(value)
   }
 
   if (config.type === 'stringArray') {
