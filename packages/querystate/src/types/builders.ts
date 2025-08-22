@@ -27,7 +27,7 @@ export interface StringArrayParamBuilder extends StringArrayConfig {
   default(value: string[]): StringArrayConfig & { defaultValue: string[] }
 }
 
-export interface StringTupleParamBuilder<N extends number> extends Omit<StringTupleConfig<N>, 'defaultValue'> {
+export interface StringTupleParamBuilder<N extends number> extends StringTupleConfig<N> {
   min(length: number): StringTupleParamBuilder<N>   // String character length only
   max(length: number): StringTupleParamBuilder<N>   // String character length only
   lowercase(): StringTupleParamBuilder<N>

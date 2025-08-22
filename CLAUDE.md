@@ -92,6 +92,59 @@ The project uses strict TypeScript settings with:
 - Strict mode enabled
 - No unused locals/parameters
 
+## Testing Standards
+
+### Button-Based Interactive Testing
+
+**ALWAYS use this format for testing new features:**
+
+Create interactive test components with buttons instead of forms or text inputs. This provides:
+- **Instant feedback** - Click and immediately see results  
+- **Edge case testing** - Easy to test boundaries and constraints  
+- **Visual organization** - Each parameter type gets its own section  
+- **Clear labeling** - Button text explains exactly what it does  
+- **URL visibility** - Real-time URL display shows what's happening  
+- **No typing errors** - Eliminates user input mistakes during testing  
+
+**Standard Test Layout Pattern:**
+```tsx
+function ParameterTest() {
+  const schema = {
+    param: simpleQueryState.string().min(2).max(10).default('default')
+  }
+  const { param, setParam } = useSimpleQueryState(schema)
+  
+  return (
+    <div style={{ color: 'white', padding: '20px', fontFamily: 'monospace' }}>
+      <h3>Parameter Type (constraints description)</h3>
+      <p>Value: {param ?? 'undefined'}</p>
+      
+      <button onClick={() => setParam('validValue')}>
+        Set Valid Value
+      </button>
+      <button onClick={() => setParam('invalid')}>
+        Set Invalid Value (describe what happens)
+      </button>
+      <button onClick={() => setParam(undefined)}>
+        Clear
+      </button>
+      
+      <div style={{ marginTop: '20px', background: '#333', padding: '10px' }}>
+        <h3>Current URL:</h3>
+        <p>{window.location.search || '(empty)'}</p>
+      </div>
+    </div>
+  )
+}
+```
+
+**Example Button Categories:**
+- **Valid values** - Normal expected inputs
+- **Edge cases** - Boundary conditions (min/max lengths, values)
+- **Invalid inputs** - Values that should be rejected or transformed
+- **Type coercion** - How different input types are handled
+- **Clear/reset** - Setting to undefined
+
 ## Planning Mode Best Practices
 
 When working on complex refactoring or architectural changes, it's recommended to stay in plan mode through the entire planning process. This allows for:

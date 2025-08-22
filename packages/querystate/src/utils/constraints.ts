@@ -13,7 +13,7 @@ export function applyStringConstraints(
     email?: boolean
     url?: boolean
     uuid?: boolean
-    defaultValue?: string
+    defaultValue?: string | string[]
   }
 ): string | undefined {
   // Apply transformations first
@@ -22,7 +22,7 @@ export function applyStringConstraints(
   
   // Check length constraints
   if (config.minLength && value.length < config.minLength) {
-    return config.defaultValue
+    return typeof config.defaultValue === 'string' ? config.defaultValue : undefined
   }
   if (config.maxLength && value.length > config.maxLength) {
     value = value.substring(0, config.maxLength)
@@ -30,13 +30,13 @@ export function applyStringConstraints(
   
   // Check format constraints
   if (config.email && !EMAIL_REGEX.test(value)) {
-    return config.defaultValue
+    return typeof config.defaultValue === 'string' ? config.defaultValue : undefined
   }
   if (config.url && !URL_REGEX.test(value)) {
-    return config.defaultValue
+    return typeof config.defaultValue === 'string' ? config.defaultValue : undefined
   }
   if (config.uuid && !UUID_REGEX.test(value)) {
-    return config.defaultValue
+    return typeof config.defaultValue === 'string' ? config.defaultValue : undefined
   }
   
   return value

@@ -37,6 +37,7 @@ function SimpleDebugApp() {
       log('2. Builder created', builder)
       log('Builder type', builder.type)
       log('Builder keys', Object.keys(builder))
+      log('Builder methods:', typeof builder.min, typeof builder.max, typeof builder.default)
       
       // Test schema creation
       const schema = { test: builder }
