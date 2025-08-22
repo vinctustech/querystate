@@ -1,2 +1,2 @@
 // Main exports for the QueryState library
-export { queryState, useQueryState } from './queryState'
+export { queryState, qs, useQueryState } from './queryState'

@@ -106,6 +106,153 @@ export interface BooleanArrayConfigWithDefault {
   maxLength?: number
 }
 
+// Tuple configs
+export interface StringTuple2Config {
+  type: 'stringTuple2'
+  defaultValue?: [string, string]
+  // Individual string constraints
+  minLength?: number
+  maxLength?: number
+  lowercase?: boolean
+  uppercase?: boolean
+  email?: boolean
+  url?: boolean
+  uuid?: boolean
+}
+
+export interface StringTuple3Config {
+  type: 'stringTuple3'
+  defaultValue?: [string, string, string]
+  minLength?: number
+  maxLength?: number
+  lowercase?: boolean
+  uppercase?: boolean
+  email?: boolean
+  url?: boolean
+  uuid?: boolean
+}
+
+export interface StringTuple4Config {
+  type: 'stringTuple4'
+  defaultValue?: [string, string, string, string]
+  minLength?: number
+  maxLength?: number
+  lowercase?: boolean
+  uppercase?: boolean
+  email?: boolean
+  url?: boolean
+  uuid?: boolean
+}
+
+export interface NumberTuple2Config {
+  type: 'numberTuple2'
+  defaultValue?: [number, number]
+  min?: number
+  max?: number
+}
+
+export interface NumberTuple3Config {
+  type: 'numberTuple3'
+  defaultValue?: [number, number, number]
+  min?: number
+  max?: number
+}
+
+export interface NumberTuple4Config {
+  type: 'numberTuple4'
+  defaultValue?: [number, number, number, number]
+  min?: number
+  max?: number
+}
+
+export interface BooleanTuple2Config {
+  type: 'booleanTuple2'
+  defaultValue?: [boolean, boolean]
+}
+
+export interface BooleanTuple3Config {
+  type: 'booleanTuple3'
+  defaultValue?: [boolean, boolean, boolean]
+}
+
+export interface BooleanTuple4Config {
+  type: 'booleanTuple4'
+  defaultValue?: [boolean, boolean, boolean, boolean]
+}
+
+// Tuple configs with required defaults
+export interface StringTuple2ConfigWithDefault {
+  type: 'stringTuple2'
+  defaultValue: [string, string]
+  minLength?: number
+  maxLength?: number
+  lowercase?: boolean
+  uppercase?: boolean
+  email?: boolean
+  url?: boolean
+  uuid?: boolean
+}
+
+export interface StringTuple3ConfigWithDefault {
+  type: 'stringTuple3'
+  defaultValue: [string, string, string]
+  minLength?: number
+  maxLength?: number
+  lowercase?: boolean
+  uppercase?: boolean
+  email?: boolean
+  url?: boolean
+  uuid?: boolean
+}
+
+export interface StringTuple4ConfigWithDefault {
+  type: 'stringTuple4'
+  defaultValue: [string, string, string, string]
+  minLength?: number
+  maxLength?: number
+  lowercase?: boolean
+  uppercase?: boolean
+  email?: boolean
+  url?: boolean
+  uuid?: boolean
+}
+
+export interface NumberTuple2ConfigWithDefault {
+  type: 'numberTuple2'
+  defaultValue: [number, number]
+  min?: number
+  max?: number
+}
+
+export interface NumberTuple3ConfigWithDefault {
+  type: 'numberTuple3'
+  defaultValue: [number, number, number]
+  min?: number
+  max?: number
+}
+
+export interface NumberTuple4ConfigWithDefault {
+  type: 'numberTuple4'
+  defaultValue: [number, number, number, number]
+  min?: number
+  max?: number
+}
+
+export interface BooleanTuple2ConfigWithDefault {
+  type: 'booleanTuple2'
+  defaultValue: [boolean, boolean]
+}
+
+export interface BooleanTuple3ConfigWithDefault {
+  type: 'booleanTuple3'
+  defaultValue: [boolean, boolean, boolean]
+}
+
+export interface BooleanTuple4ConfigWithDefault {
+  type: 'booleanTuple4'
+  defaultValue: [boolean, boolean, boolean, boolean]
+}
+
 export type Config =
   | StringConfig
   | NumberConfig
@@ -119,12 +266,31 @@ export type Config =
   | StringArrayConfigWithDefault
   | NumberArrayConfigWithDefault
   | BooleanArrayConfigWithDefault
+  | StringTuple2Config
+  | StringTuple3Config
+  | StringTuple4Config
+  | NumberTuple2Config
+  | NumberTuple3Config
+  | NumberTuple4Config
+  | BooleanTuple2Config
+  | BooleanTuple3Config
+  | BooleanTuple4Config
+  | StringTuple2ConfigWithDefault
+  | StringTuple3ConfigWithDefault
+  | StringTuple4ConfigWithDefault
+  | NumberTuple2ConfigWithDefault
+  | NumberTuple3ConfigWithDefault
+  | NumberTuple4ConfigWithDefault
+  | BooleanTuple2ConfigWithDefault
+  | BooleanTuple3ConfigWithDefault
+  | BooleanTuple4ConfigWithDefault
   | StringBuilder
   | NumberBuilder
   | BooleanBuilder
   | StringArrayBuilder
   | NumberArrayBuilder
   | BooleanArrayBuilder
+  | StringTuple2Builder
 
 // Type helper to infer the value type from a config
 type InferConfigType<T extends Config> = 
@@ -146,6 +312,13 @@ type InferConfigType<T extends Config> =
   T extends BooleanArrayConfigWithDefault ? boolean[] :
   T extends BooleanArrayConfig ? boolean[] | undefined :
   T extends BooleanArrayBuilder ? boolean[] | undefined :
+  T extends StringTuple2ConfigWithDefault ? [string, string] :
+  T extends StringTuple2Config ? [string, string] | undefined :
+  T extends StringTuple2Builder ? [string, string] | undefined :
+  T extends NumberTuple2ConfigWithDefault ? [number, number] :
+  T extends NumberTuple2Config ? [number, number] | undefined :
+  T extends BooleanTuple2ConfigWithDefault ? [boolean, boolean] :
+  T extends BooleanTuple2Config ? [boolean, boolean] | undefined :
   never
 
 // Type helper to create setter function type - always accepts undefined for clearing
@@ -169,6 +342,7 @@ export interface StringBuilder {
   url(): StringBuilder
   uuid(): StringBuilder
   array(): StringArrayBuilder
+  tuple(length: number): StringTuple2Config  // For now, just support tuple(2)
   default(value: string): StringConfigWithDefault
 }
 
@@ -213,6 +387,12 @@ export interface BooleanArrayBuilder {
   min(length: number): BooleanArrayBuilder
   max(length: number): BooleanArrayBuilder
   default(value: boolean[]): BooleanArrayConfigWithDefault
+}
+
+export interface StringTuple2Builder {
+  type: 'stringTuple2'
+  _config: Partial<StringTuple2Config>
+  default(value: [string, string]): StringTuple2ConfigWithDefault
 }
 
 // String builder
@@ -278,6 +458,25 @@ export function string(): StringBuilder {
         url: config.url,
         uuid: config.uuid,
       })
+    },
+
+    tuple(length: number): StringTuple2Config {
+      // For now, only support tuple(2) for date ranges
+      if (length !== 2) {
+        throw new Error('Only tuple(2) is currently supported')
+      }
+      
+      return {
+        type: 'stringTuple2',
+        // Copy over the string constraints from the StringBuilder
+        minLength: config.minLength,
+        maxLength: config.maxLength,
+        lowercase: config.lowercase,
+        uppercase: config.uppercase,
+        email: config.email,
+        url: config.url,
+        uuid: config.uuid,
+      }
     },
 
     default(value: string): StringConfigWithDefault {
@@ -609,6 +808,66 @@ function parseValue(rawValue: string | null, config: Config): any {
     return value
   }
 
+  if (config.type === 'stringTuple2') {
+    // Parse comma-separated string into tuple of exactly 2 strings
+    const parsed = rawValue.split(',')
+    
+    // Must have exactly 2 items
+    if (parsed.length !== 2) {
+      return defaultValue
+    }
+
+    // Apply string constraints to each tuple item
+    const processedTuple = parsed.map(item => {
+      let value = item
+
+      // Apply transformation constraints
+      const isLowercase = getConfigValue(config, 'lowercase')
+      const isUppercase = getConfigValue(config, 'uppercase')
+      
+      if (isLowercase) {
+        value = value.toLowerCase()
+      } else if (isUppercase) {
+        value = value.toUpperCase()
+      }
+
+      // Apply length constraints
+      const minLength = getMinLength(config)
+      const maxLength = getMaxLength(config)
+
+      if (minLength && value.length < minLength) {
+        return null // Invalid item
+      }
+      if (maxLength && value.length > maxLength) {
+        value = value.substring(0, maxLength)
+      }
+
+      // Apply validation constraints
+      const isEmail = getConfigValue(config, 'email')
+      const isUrl = getConfigValue(config, 'url')
+      const isUuid = getConfigValue(config, 'uuid')
+
+      if (isEmail && !isValidEmail(value)) {
+        return null // Invalid item
+      }
+      if (isUrl && !isValidUrl(value)) {
+        return null // Invalid item
+      }
+      if (isUuid && !isValidUuid(value)) {
+        return null // Invalid item
+      }
+
+      return value
+    })
+
+    // If any item is invalid, return default
+    if (processedTuple.some(item => item === null)) {
+      return defaultValue
+    }
+
+    return processedTuple as [string, string]
+  }
+
   return rawValue
 }
 
@@ -761,6 +1020,75 @@ function validateValue(value: any, config: Config): any {
     return validatedValue
   }
 
+  if (config.type === 'stringTuple2') {
+    // String tuple validation
+    console.log('🔍 validateValue stringTuple2 - Input:', value, 'Config:', config)
+    
+    if (!Array.isArray(value) || value.length !== 2) {
+      console.log('❌ validateValue stringTuple2 - Invalid array or length, returning default:', defaultValue)
+      return defaultValue
+    }
+
+    // Apply string constraints to each tuple item
+    const processedTuple = value.map((item, index) => {
+      let stringValue = String(item)
+      console.log(`🔍 validateValue stringTuple2 - Processing item ${index}: "${stringValue}"`)
+
+      // Apply transformation constraints
+      const isLowercase = getConfigValue(config, 'lowercase')
+      const isUppercase = getConfigValue(config, 'uppercase')
+      
+      if (isLowercase) {
+        stringValue = stringValue.toLowerCase()
+      } else if (isUppercase) {
+        stringValue = stringValue.toUpperCase()
+      }
+
+      // Apply length constraints
+      const minLength = getMinLength(config)
+      const maxLength = getMaxLength(config)
+      console.log(`🔍 validateValue stringTuple2 - Item ${index}: minLength=${minLength}, maxLength=${maxLength}, stringValue.length=${stringValue.length}`)
+
+      if (minLength && stringValue.length < minLength) {
+        console.log(`❌ validateValue stringTuple2 - Item ${index} "${stringValue}" too short (${stringValue.length} < ${minLength})`)
+        return null // Invalid item
+      }
+      if (maxLength && stringValue.length > maxLength) {
+        stringValue = stringValue.substring(0, maxLength)
+      }
+
+      // Apply validation constraints
+      const isEmail = getConfigValue(config, 'email')
+      const isUrl = getConfigValue(config, 'url')
+      const isUuid = getConfigValue(config, 'uuid')
+
+      if (isEmail && !isValidEmail(stringValue)) {
+        console.log(`❌ validateValue stringTuple2 - Item ${index} "${stringValue}" invalid email`)
+        return null // Invalid item
+      }
+      if (isUrl && !isValidUrl(stringValue)) {
+        console.log(`❌ validateValue stringTuple2 - Item ${index} "${stringValue}" invalid URL`)
+        return null // Invalid item
+      }
+      if (isUuid && !isValidUuid(stringValue)) {
+        console.log(`❌ validateValue stringTuple2 - Item ${index} "${stringValue}" invalid UUID`)
+        return null // Invalid item
+      }
+
+      console.log(`✅ validateValue stringTuple2 - Item ${index} "${stringValue}" valid`)
+      return stringValue
+    })
+
+    // If any item is invalid, return default
+    if (processedTuple.some(item => item === null)) {
+      console.log('❌ validateValue stringTuple2 - Some items invalid, returning default:', defaultValue)
+      return defaultValue
+    }
+
+    console.log('✅ validateValue stringTuple2 - All items valid, returning tuple:', processedTuple)
+    return processedTuple as [string, string]
+  }
+
   return value
 }
 
@@ -776,6 +1104,11 @@ function serializeValue(value: any, config: Config): string | undefined {
 
   if (config.type === 'stringArray') {
     // Serialize array as comma-separated string
+    return Array.isArray(value) ? value.join(',') : String(value)
+  }
+
+  if (config.type === 'stringTuple2') {
+    // Serialize tuple as comma-separated string
     return Array.isArray(value) ? value.join(',') : String(value)
   }
 
@@ -1011,3 +1344,6 @@ export const queryState = {
   numberArray,
   booleanArray,
 }
+
+// Convenient short alias
+export const qs = queryState

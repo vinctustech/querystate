@@ -1,51 +1,70 @@
-import { queryState, useQueryState } from '@vinctus/querystate'
+import { qs, useQueryState } from '@vinctus/querystate'
+
+// Helper function to get default value from config
+function getDefaultValue(config: any): any {
+  if (config && typeof config === 'object') {
+    if ('defaultValue' in config) {
+      return config.defaultValue
+    }
+    if ('_config' in config && config._config && 'defaultValue' in config._config) {
+      return config._config.defaultValue
+    }
+  }
+  return undefined
+}
 
 function App() {
   const schema = {
     // String with constraints
-    name: queryState.string().min(2).max(10).default('John'),
+    name: qs.string().min(2).max(10).default('John'),
     
     // String transformations
-    username: queryState.string().min(3).max(20).lowercase().default('user123'),
-    displayName: queryState.string().min(2).max(30).uppercase(),
+    username: qs.string().min(3).max(20).lowercase().default('user123'),
+    displayName: qs.string().min(2).max(30).uppercase(),
     
     // String validations
-    email: queryState.string().email().default('user@example.com'),
-    website: queryState.string().url(),
-    userId: queryState.string().uuid(),
+    email: qs.string().email().default('user@example.com'),
+    website: qs.string().url(),
+    userId: qs.string().uuid(),
     
     // Number with constraints  
-    age: queryState.number().min(0).max(120).default(25),
+    age: qs.number().min(0).max(120).default(25),
     
     // Simple string without constraints
-    category: queryState.string(),
+    category: qs.string(),
     
     // Number without constraints
-    score: queryState.number(),
+    score: qs.number(),
     
     // Boolean with default
-    isActive: queryState.boolean().default(true),
+    isActive: qs.boolean().default(true),
     
     // Simple boolean without default
-    hasDiscount: queryState.boolean(),
+    hasDiscount: qs.boolean(),
     
     // String array with constraints (strings 2-10 chars, array 1-3 items)
-    tags: queryState.string().min(2).max(10).array().min(1).max(3).default(['react', 'typescript']),
+    tags: qs.string().min(2).max(10).array().min(1).max(3).default(['react', 'typescript']),
     
     // Simple string array without constraints
-    categories: queryState.string().array(),
+    categories: qs.string().array(),
     
     // Number array with constraints (values 0-100, array 2-4 items)
-    scores: queryState.number().min(0).max(100).array().min(2).max(4).default([85, 92]),
+    scores: qs.number().min(0).max(100).array().min(2).max(4).default([85, 92]),
     
     // Simple number array without constraints
-    ratings: queryState.number().array(),
+    ratings: qs.number().array(),
     
     // Boolean array with constraints (array 1-3 items)
-    features: queryState.boolean().array().min(1).max(3).default([true, false]),
+    features: qs.boolean().array().min(1).max(3).default([true, false]),
     
     // Simple boolean array without constraints
-    flags: queryState.boolean().array()
+    flags: qs.boolean().array(),
+    
+    // String tuple (exactly 2 strings, min 2 chars each) - like first/last name
+    fullName: qs.string().min(2).tuple(2),
+    
+    // String tuple with default (exactly 2 strings, min 2 chars each) - like default name  
+    defaultName: { ...qs.string().min(2).tuple(2), defaultValue: ['Default', 'User'] }
   }
   
   const { 
@@ -65,7 +84,9 @@ function App() {
     scores, setScores,
     ratings, setRatings,
     features, setFeatures,
-    flags, setFlags
+    flags, setFlags,
+    fullName, setFullName,
+    defaultName, setDefaultName
   } = useQueryState(schema)
   
   // Debug output
@@ -84,6 +105,14 @@ function App() {
     `Schema isActive object: ${JSON.stringify(schema.isActive, null, 2)}`,
     `Schema isActive keys: ${Object.keys(schema.isActive).join(', ')}`,
     `Schema isActive defaultValue: ${(schema.isActive as any).defaultValue}`,
+    ``,
+    `Schema fullName object: ${JSON.stringify(schema.fullName, null, 2)}`,
+    `Schema fullName keys: ${Object.keys(schema.fullName).join(', ')}`,
+    `Schema fullName defaultValue: ${getDefaultValue(schema.fullName)}`,
+    ``,
+    `Schema defaultName object: ${JSON.stringify(schema.defaultName, null, 2)}`,
+    `Schema defaultName keys: ${Object.keys(schema.defaultName).join(', ')}`,
+    `Schema defaultName defaultValue: ${getDefaultValue(schema.defaultName)}`,
     ``,
     `=== CURRENT VALUES ===`,
     `Current name value: ${name}`,
@@ -426,6 +455,38 @@ function App() {
         </button>
         <button style={clearButtonStyle} onClick={() => setFlags(undefined)}>
           Clear
+        </button>
+      </div>
+      
+      <div style={majorSeparatorStyle}>🎯 Tuple Types</div>
+      
+      <div style={minorSeparatorStyle}>String Tuples</div>
+      <div style={{ marginBottom: '20px' }}>
+        <h3>String tuple (exactly 2 strings, min 2 chars each) - Full Name</h3>
+        <p>Full Name: {displayValue(Array.isArray(fullName) ? fullName.join(', ') : fullName)}</p>
+        <button style={buttonStyle} onClick={() => setFullName(['John', 'Doe'])}>
+          Set ['John', 'Doe'] (valid)
+        </button>
+        <button style={buttonStyle} onClick={() => setFullName(['A', 'Smith'])}>
+          Set ['A', 'Smith'] (first too short)
+        </button>
+        {/* TypeScript prevents this: setFullName(['Jane']) - wrong tuple length */}
+        <button style={clearButtonStyle} onClick={() => setFullName(undefined)}>
+          Clear
+        </button>
+      </div>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <h3>String tuple with default (exactly 2 strings, min 2 chars each, default: ['Default', 'User'])</h3>
+        <p>Default Name: {displayValue(Array.isArray(defaultName) ? defaultName.join(', ') : defaultName)}</p>
+        <button style={buttonStyle} onClick={() => setDefaultName(['Admin', 'User'])}>
+          Set ['Admin', 'User'] (valid)
+        </button>
+        <button style={buttonStyle} onClick={() => setDefaultName(['A', 'Test'])}>
+          Set ['A', 'Test'] (first too short)
+        </button>
+        <button style={clearButtonStyle} onClick={() => setDefaultName(undefined)}>
+          Clear (revert to default)
         </button>
       </div>
       
