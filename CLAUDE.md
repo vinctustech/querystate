@@ -110,9 +110,9 @@ Create interactive test components with buttons instead of forms or text inputs.
 ```tsx
 function ParameterTest() {
   const schema = {
-    param: simpleQueryState.string().min(2).max(10).default('default')
+    param: queryState.string().min(2).max(10).default('default')
   }
-  const { param, setParam } = useSimpleQueryState(schema)
+  const { param, setParam } = useQueryState(schema)
   
   return (
     <div style={{ color: 'white', padding: '20px', fontFamily: 'monospace' }}>
@@ -144,6 +144,31 @@ function ParameterTest() {
 - **Invalid inputs** - Values that should be rejected or transformed
 - **Type coercion** - How different input types are handled
 - **Clear/reset** - Setting to undefined
+
+## API Naming Standards
+
+**CRITICAL: Never rename the core library API!**
+
+The library exports must always be:
+- `useQueryState` - The main React hook (never `useSimpleQueryState` or variants)
+- `queryState` - The main builder object (never `simpleQueryState` or variants)
+
+These names are the public API that users depend on. Even during refactoring or creating simplified implementations, the exported names must remain consistent.
+
+**Example:**
+```typescript
+// ✅ CORRECT - Always use these exact names
+import { queryState, useQueryState } from 'querystate'
+
+const schema = {
+  name: queryState.string().min(2).max(10),
+  age: queryState.number().min(0).max(120)
+}
+
+const { name, setName, age, setAge } = useQueryState(schema)
+```
+
+Internal implementation files can have descriptive names (like `simple.ts`), but exports in `index.ts` must use the standard API names.
 
 ## Planning Mode Best Practices
 
