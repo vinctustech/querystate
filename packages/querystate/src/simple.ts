@@ -318,7 +318,10 @@ export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T)
 
   // Check if defaults need to be applied to URL on initial load
   const needsDefaultsApplied = Object.entries(schema).some(([key, config]) => {
-    const hasValue = searchParams.has(key)
+    const arrayKey = key + '[]'
+    const hasArrayValue = config.type === 'stringArray' && searchParams.has(arrayKey)
+    const hasRegularValue = searchParams.has(key)
+    const hasValue = hasArrayValue || hasRegularValue
     const hasDefault = getDefaultValue(config) !== undefined
     debugMessages.push(
       `DEBUG: ${key} - hasValue: ${hasValue}, hasDefault: ${hasDefault}, getDefaultValue: ${getDefaultValue(config)}`,
@@ -343,16 +346,28 @@ export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T)
       const paramsWithDefaults = new URLSearchParams(currentSearchParams)
 
       Object.entries(schema).forEach(([key, config]) => {
-        if (!paramsWithDefaults.has(key)) {
+        const arrayKey = key + '[]'
+        const hasArrayValue = config.type === 'stringArray' && paramsWithDefaults.has(arrayKey)
+        const hasRegularValue = paramsWithDefaults.has(key)
+        
+        if (!hasArrayValue && !hasRegularValue) {
           const defaultValue = getDefaultValue(config)
           timeoutDebugMessages.push(
             `DEBUG: setTimeout - Setting ${key} to default: ${defaultValue}`,
           )
           if (defaultValue !== undefined) {
-            const serialized = serializeValue(defaultValue, config)
-            timeoutDebugMessages.push(`DEBUG: setTimeout - Serialized ${key}: ${serialized}`)
-            if (serialized !== undefined) {
-              paramsWithDefaults.set(key, serialized)
+            if (config.type === 'stringArray' && Array.isArray(defaultValue)) {
+              // For arrays, use param[] syntax - set multiple entries
+              defaultValue.forEach(item => {
+                paramsWithDefaults.append(arrayKey, String(item))
+              })
+              timeoutDebugMessages.push(`DEBUG: setTimeout - Set array ${arrayKey} with ${defaultValue.length} items`)
+            } else {
+              const serialized = serializeValue(defaultValue, config)
+              timeoutDebugMessages.push(`DEBUG: setTimeout - Serialized ${key}: ${serialized}`)
+              if (serialized !== undefined) {
+                paramsWithDefaults.set(key, serialized)
+              }
             }
           }
         }
@@ -389,8 +404,10 @@ export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T)
         // Use current parsed value
         let rawValue: string | null
         if (config.type === 'stringArray') {
-          // For arrays, get all values
-          rawValue = searchParams.getAll(key).join(',') || null
+          // For arrays, use param[] syntax with URLSearchParams.getAll()
+          const arrayKey = key + '[]'
+          const arrayValues = searchParams.getAll(arrayKey)
+          rawValue = arrayValues.length > 0 ? arrayValues.join(',') : null
         } else {
           rawValue = searchParams.get(key)
         }
@@ -399,10 +416,18 @@ export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T)
 
       // Validate the value before setting
       const validatedValue = validateValue(valueToUse, config)
-      const serialized = serializeValue(validatedValue, config)
-
-      if (serialized !== undefined) {
-        newParams.set(key, serialized)
+      
+      if (config.type === 'stringArray' && Array.isArray(validatedValue)) {
+        // For arrays, use param[] syntax - set multiple entries
+        const arrayKey = key + '[]'
+        validatedValue.forEach(item => {
+          newParams.append(arrayKey, String(item))
+        })
+      } else {
+        const serialized = serializeValue(validatedValue, config)
+        if (serialized !== undefined) {
+          newParams.set(key, serialized)
+        }
       }
     })
 
@@ -414,8 +439,10 @@ export function useQueryState<T extends Record<string, SimpleConfig>>(schema: T)
     // Get and parse current value
     let rawValue: string | null
     if (config.type === 'stringArray') {
-      // For arrays, get all values
-      rawValue = searchParams.getAll(key).join(',') || null
+      // For arrays, use param[] syntax with URLSearchParams.getAll()
+      const arrayKey = key + '[]'
+      const arrayValues = searchParams.getAll(arrayKey)
+      rawValue = arrayValues.length > 0 ? arrayValues.join(',') : null
     } else {
       rawValue = searchParams.get(key)
     }
