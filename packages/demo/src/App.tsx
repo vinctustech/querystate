@@ -29,11 +29,11 @@ function App() {
     // Simple boolean without default
     hasDiscount: queryState.boolean(),
     
-    // String array with constraints
-    tags: queryState.stringArray().min(1).max(3).default(['react', 'typescript']),
+    // String array with constraints (strings 2-10 chars, array 1-3 items)
+    tags: queryState.string().min(2).max(10).array().min(1).max(3).default(['react', 'typescript']),
     
     // Simple string array without constraints
-    categories: queryState.stringArray(),
+    categories: queryState.string().array(),
     
     // Number array with constraints
     scores: queryState.numberArray().min(2).max(4).minValue(0).maxValue(100).default([85, 92]),
@@ -333,7 +333,7 @@ function App() {
       <div style={minorSeparatorStyle}>String Arrays</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>String array with constraints (min: 1, max: 3, default: ['react', 'typescript'])</h3>
-        <p>Tags: {displayValue(Array.isArray(tags) ? tags.join(', ') : tags)}</p>
+        <p>Tags: {displayValue(tags.join(', '))}</p>
         <button style={buttonStyle} onClick={() => setTags([])}>
           Set [] (too few)
         </button>
@@ -365,7 +365,7 @@ function App() {
       <div style={minorSeparatorStyle}>Number Arrays</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>Number array with constraints (min: 2, max: 4, values: 0-100, default: [85, 92])</h3>
-        <p>Scores: {displayValue(Array.isArray(scores) ? scores.join(', ') : scores)}</p>
+        <p>Scores: {displayValue(scores.join(', '))}</p>
         <button style={buttonStyle} onClick={() => setScores([75])}>
           Set [75] (too few items)
         </button>
@@ -400,7 +400,7 @@ function App() {
       <div style={minorSeparatorStyle}>Boolean Arrays</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>Boolean array with constraints (min: 1, max: 3, default: [true, false])</h3>
-        <p>Features: {displayValue(Array.isArray(features) ? features.join(', ') : features)}</p>
+        <p>Features: {displayValue(features.join(', '))}</p>
         <button style={buttonStyle} onClick={() => setFeatures([])}>
           Set [] (too few)
         </button>

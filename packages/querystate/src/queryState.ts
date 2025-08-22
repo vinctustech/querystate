@@ -29,8 +29,17 @@ export interface BooleanConfig {
 export interface StringArrayConfig {
   type: 'stringArray'
   defaultValue?: string[]
-  minLength?: number
-  maxLength?: number
+  // Array constraints
+  minLength?: number  // Min array length
+  maxLength?: number  // Max array length
+  // Individual string constraints (from string builder)
+  stringMinLength?: number  // Min length of each string
+  stringMaxLength?: number  // Max length of each string  
+  lowercase?: boolean
+  uppercase?: boolean
+  email?: boolean
+  url?: boolean
+  uuid?: boolean
 }
 
 export interface NumberArrayConfig {
@@ -159,7 +168,16 @@ export interface StringBuilder {
   email(): StringBuilder
   url(): StringBuilder
   uuid(): StringBuilder
+  array(): StringArrayBuilder
   default(value: string): StringConfigWithDefault
+}
+
+export interface StringArrayBuilder {
+  type: 'stringArray'
+  _config: Partial<StringArrayConfig> // Expose internal config
+  min(length: number): StringArrayBuilder
+  max(length: number): StringArrayBuilder
+  default(value: string[]): StringArrayConfigWithDefault
 }
 
 export interface NumberBuilder {
@@ -174,12 +192,6 @@ export interface BooleanBuilder {
   default(value: boolean): BooleanConfigWithDefault
 }
 
-export interface StringArrayBuilder {
-  type: 'stringArray'
-  min(length: number): StringArrayBuilder
-  max(length: number): StringArrayBuilder
-  default(value: string[]): StringArrayConfigWithDefault
-}
 
 export interface NumberArrayBuilder {
   type: 'numberArray'
@@ -231,6 +243,37 @@ export function string(): StringBuilder {
       return createBuilder({ ...config, uuid: true })
     },
 
+    array(): StringArrayBuilder {
+      // Create a StringArrayBuilder with the string constraints
+      const createStringArrayBuilder = (arrayConfig: Partial<StringArrayConfig> = {}): StringArrayBuilder => ({
+        type: 'stringArray',
+        _config: arrayConfig,
+
+        min(length: number): StringArrayBuilder {
+          return createStringArrayBuilder({ ...arrayConfig, minLength: length })
+        },
+
+        max(length: number): StringArrayBuilder {
+          return createStringArrayBuilder({ ...arrayConfig, maxLength: length })
+        },
+
+        default(value: string[]): StringArrayConfigWithDefault {
+          return { type: 'stringArray', ...arrayConfig, defaultValue: value }
+        },
+      })
+
+      return createStringArrayBuilder({
+        // Copy over the string constraints from the StringBuilder  
+        stringMinLength: config.minLength,
+        stringMaxLength: config.maxLength,
+        lowercase: config.lowercase,
+        uppercase: config.uppercase,
+        email: config.email,
+        url: config.url,
+        uuid: config.uuid,
+      })
+    },
+
     default(value: string): StringConfigWithDefault {
       return { type: 'string', ...config, defaultValue: value }
     },
@@ -277,6 +320,7 @@ export function boolean(): BooleanBuilder {
 export function stringArray(): StringArrayBuilder {
   const createBuilder = (config: Partial<StringArrayConfig> = {}): StringArrayBuilder => ({
     type: 'stringArray',
+    _config: config,
 
     min(length: number): StringArrayBuilder {
       return createBuilder({ ...config, minLength: length })
