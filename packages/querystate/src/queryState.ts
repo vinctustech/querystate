@@ -357,6 +357,7 @@ export type Config =
   | BooleanArrayBuilder
   | DateArrayBuilder
   | StringTuple2Builder
+  | DateTuple2Builder
 
 // Type helper to infer the value type from a config
 type InferConfigType<T extends Config> = 
@@ -393,6 +394,7 @@ type InferConfigType<T extends Config> =
   T extends BooleanTuple2Config ? [boolean, boolean] | undefined :
   T extends DateTuple2ConfigWithDefault ? [Date, Date] :
   T extends DateTuple2Config ? [Date, Date] | undefined :
+  T extends DateTuple2Builder ? [Date, Date] | undefined :
   never
 
 // Type helper to create setter function type - always accepts undefined for clearing
@@ -491,6 +493,12 @@ export interface DateArrayBuilder {
   future(): DateArrayBuilder
   past(): DateArrayBuilder
   default(value: Date[]): DateArrayConfigWithDefault
+}
+
+export interface DateTuple2Builder {
+  type: 'dateTuple2'
+  _config: Partial<DateTuple2Config>
+  default(value: [Date, Date]): DateTuple2ConfigWithDefault
 }
 
 // String builder
