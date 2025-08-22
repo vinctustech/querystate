@@ -949,6 +949,54 @@ function parseValue(rawValue: string | null, config: Config): any {
     return parsed
   }
 
+  if (config.type === 'dateTuple2') {
+    // Parse comma-separated string into tuple of exactly 2 dates
+    const parsed = rawValue.split(',')
+    
+    // Must have exactly 2 items
+    if (parsed.length !== 2) {
+      return defaultValue
+    }
+
+    // Parse each date
+    const processedTuple = parsed.map(item => {
+      const date = new Date(item)
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return null
+      }
+
+      // Apply date constraints
+      const min = getConfigValue(config, 'min')
+      const max = getConfigValue(config, 'max')
+      const future = getConfigValue(config, 'future')
+      const past = getConfigValue(config, 'past')
+
+      if (min && date < min) {
+        return null
+      }
+      if (max && date > max) {
+        return null
+      }
+      if (future && date <= new Date()) {
+        return null
+      }
+      if (past && date >= new Date()) {
+        return null
+      }
+
+      return date
+    })
+
+    // If any date is invalid, return default
+    if (processedTuple.some(item => item === null)) {
+      return defaultValue
+    }
+
+    return processedTuple as [Date, Date]
+  }
+
   if (config.type === 'stringArray') {
     // Parse comma-separated string into array
     const parsed = rawValue.split(',')
@@ -1367,6 +1415,11 @@ function serializeValue(value: any, config: Config): string | undefined {
   if (config.type === 'stringTuple2') {
     // Serialize tuple as comma-separated string
     return Array.isArray(value) ? value.join(',') : String(value)
+  }
+
+  if (config.type === 'dateTuple2') {
+    // Serialize date tuple as comma-separated ISO strings
+    return Array.isArray(value) ? value.map(d => d instanceof Date ? d.toISOString() : String(d)).join(',') : String(value)
   }
 
   return String(value)
