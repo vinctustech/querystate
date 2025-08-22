@@ -1,4 +1,4 @@
-import { queryState, useQueryState } from 'querystate/src'
+import { queryState, useQueryState } from '@vinctus/querystate'
 
 function App() {
   const schema = {
