@@ -26,6 +26,15 @@ export interface BooleanConfig {
   defaultValue?: boolean
 }
 
+export interface DateConfig {
+  type: 'date'
+  defaultValue?: Date
+  min?: Date
+  max?: Date
+  future?: boolean
+  past?: boolean
+}
+
 export interface StringArrayConfig {
   type: 'stringArray'
   defaultValue?: string[]
@@ -81,6 +90,37 @@ export interface NumberConfigWithDefault {
 export interface BooleanConfigWithDefault {
   type: 'boolean'
   defaultValue: boolean
+}
+
+export interface DateConfigWithDefault {
+  type: 'date'
+  defaultValue: Date
+  min?: Date
+  max?: Date
+  future?: boolean
+  past?: boolean
+}
+
+export interface DateArrayConfig {
+  type: 'dateArray'
+  defaultValue?: Date[]
+  minLength?: number
+  maxLength?: number
+  min?: Date
+  max?: Date
+  future?: boolean
+  past?: boolean
+}
+
+export interface DateArrayConfigWithDefault {
+  type: 'dateArray'
+  defaultValue: Date[]
+  minLength?: number
+  maxLength?: number
+  min?: Date
+  max?: Date
+  future?: boolean
+  past?: boolean
 }
 
 export interface StringArrayConfigWithDefault {
@@ -180,6 +220,24 @@ export interface BooleanTuple4Config {
   defaultValue?: [boolean, boolean, boolean, boolean]
 }
 
+export interface DateTuple2Config {
+  type: 'dateTuple2'
+  defaultValue?: [Date, Date]
+  min?: Date
+  max?: Date
+  future?: boolean
+  past?: boolean
+}
+
+export interface DateTuple2ConfigWithDefault {
+  type: 'dateTuple2'
+  defaultValue: [Date, Date]
+  min?: Date
+  max?: Date
+  future?: boolean
+  past?: boolean
+}
+
 // Tuple configs with required defaults
 export interface StringTuple2ConfigWithDefault {
   type: 'stringTuple2'
@@ -257,15 +315,19 @@ export type Config =
   | StringConfig
   | NumberConfig
   | BooleanConfig
+  | DateConfig
   | StringArrayConfig
   | NumberArrayConfig
   | BooleanArrayConfig
+  | DateArrayConfig
   | StringConfigWithDefault
   | NumberConfigWithDefault
   | BooleanConfigWithDefault
+  | DateConfigWithDefault
   | StringArrayConfigWithDefault
   | NumberArrayConfigWithDefault
   | BooleanArrayConfigWithDefault
+  | DateArrayConfigWithDefault
   | StringTuple2Config
   | StringTuple3Config
   | StringTuple4Config
@@ -275,6 +337,7 @@ export type Config =
   | BooleanTuple2Config
   | BooleanTuple3Config
   | BooleanTuple4Config
+  | DateTuple2Config
   | StringTuple2ConfigWithDefault
   | StringTuple3ConfigWithDefault
   | StringTuple4ConfigWithDefault
@@ -284,12 +347,15 @@ export type Config =
   | BooleanTuple2ConfigWithDefault
   | BooleanTuple3ConfigWithDefault
   | BooleanTuple4ConfigWithDefault
+  | DateTuple2ConfigWithDefault
   | StringBuilder
   | NumberBuilder
   | BooleanBuilder
+  | DateBuilder
   | StringArrayBuilder
   | NumberArrayBuilder
   | BooleanArrayBuilder
+  | DateArrayBuilder
   | StringTuple2Builder
 
 // Type helper to infer the value type from a config
@@ -393,6 +459,30 @@ export interface StringTuple2Builder {
   type: 'stringTuple2'
   _config: Partial<StringTuple2Config>
   default(value: [string, string]): StringTuple2ConfigWithDefault
+}
+
+export interface DateBuilder {
+  type: 'date'
+  _config: Partial<DateConfig>
+  min(date: Date): DateBuilder
+  max(date: Date): DateBuilder
+  future(): DateBuilder
+  past(): DateBuilder
+  array(): DateArrayBuilder
+  tuple(length: number): DateTuple2Config
+  default(value: Date): DateConfigWithDefault
+}
+
+export interface DateArrayBuilder {
+  type: 'dateArray'
+  _config: Partial<DateArrayConfig>
+  min(length: number): DateArrayBuilder
+  max(length: number): DateArrayBuilder
+  minDate(date: Date): DateArrayBuilder
+  maxDate(date: Date): DateArrayBuilder
+  future(): DateArrayBuilder
+  past(): DateArrayBuilder
+  default(value: Date[]): DateArrayConfigWithDefault
 }
 
 // String builder
@@ -653,6 +743,92 @@ export function booleanArray(): BooleanArrayBuilder {
     },
   })
   
+  return createBuilder()
+}
+
+// Date builder
+export function date(): DateBuilder {
+  const createBuilder = (config: Partial<DateConfig> = {}): DateBuilder => ({
+    type: 'date',
+    _config: config,
+
+    min(date: Date): DateBuilder {
+      return createBuilder({ ...config, min: date })
+    },
+
+    max(date: Date): DateBuilder {
+      return createBuilder({ ...config, max: date })
+    },
+
+    future(): DateBuilder {
+      return createBuilder({ ...config, future: true })
+    },
+
+    past(): DateBuilder {
+      return createBuilder({ ...config, past: true })
+    },
+
+    array(): DateArrayBuilder {
+      const createDateArrayBuilder = (arrayConfig: Partial<DateArrayConfig> = {}): DateArrayBuilder => ({
+        type: 'dateArray',
+        _config: arrayConfig,
+
+        min(length: number): DateArrayBuilder {
+          return createDateArrayBuilder({ ...arrayConfig, minLength: length })
+        },
+
+        max(length: number): DateArrayBuilder {
+          return createDateArrayBuilder({ ...arrayConfig, maxLength: length })
+        },
+
+        minDate(date: Date): DateArrayBuilder {
+          return createDateArrayBuilder({ ...arrayConfig, min: date })
+        },
+
+        maxDate(date: Date): DateArrayBuilder {
+          return createDateArrayBuilder({ ...arrayConfig, max: date })
+        },
+
+        future(): DateArrayBuilder {
+          return createDateArrayBuilder({ ...arrayConfig, future: true })
+        },
+
+        past(): DateArrayBuilder {
+          return createDateArrayBuilder({ ...arrayConfig, past: true })
+        },
+
+        default(value: Date[]): DateArrayConfigWithDefault {
+          return { type: 'dateArray', ...arrayConfig, defaultValue: value }
+        },
+      })
+
+      return createDateArrayBuilder({
+        min: config.min,
+        max: config.max,
+        future: config.future,
+        past: config.past,
+      })
+    },
+
+    tuple(length: number): DateTuple2Config {
+      if (length !== 2) {
+        throw new Error('Only tuple(2) is currently supported')
+      }
+      
+      return {
+        type: 'dateTuple2',
+        min: config.min,
+        max: config.max,
+        future: config.future,
+        past: config.past,
+      }
+    },
+
+    default(value: Date): DateConfigWithDefault {
+      return { type: 'date', ...config, defaultValue: value }
+    },
+  })
+
   return createBuilder()
 }
 
@@ -1340,6 +1516,7 @@ export const queryState = {
   string,
   number,
   boolean,
+  date,
   stringArray,
   numberArray,
   booleanArray,

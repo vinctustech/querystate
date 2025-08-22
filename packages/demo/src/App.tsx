@@ -64,7 +64,7 @@ function App() {
     fullName: qs.string().min(2).tuple(2),
     
     // String tuple with default (exactly 2 strings, min 2 chars each) - like default name  
-    defaultName: { ...qs.string().min(2).tuple(2), defaultValue: ['Default', 'User'] }
+    defaultName: { ...qs.string().min(2).tuple(2), defaultValue: ['Default', 'User'] } as any
   }
   
   const { 
