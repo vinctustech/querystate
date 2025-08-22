@@ -41,11 +41,11 @@ function App() {
     // Simple number array without constraints
     ratings: queryState.number().array(),
     
-    // Boolean array with constraints
-    features: queryState.booleanArray().min(1).max(3).default([true, false]),
+    // Boolean array with constraints (array 1-3 items)
+    features: queryState.boolean().array().min(1).max(3).default([true, false]),
     
     // Simple boolean array without constraints
-    flags: queryState.booleanArray()
+    flags: queryState.boolean().array()
   }
   
   const { 

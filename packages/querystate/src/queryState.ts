@@ -191,6 +191,8 @@ export interface NumberBuilder {
 
 export interface BooleanBuilder {
   type: 'boolean'
+  _config: Partial<BooleanConfig>
+  array(): BooleanArrayBuilder
   default(value: boolean): BooleanConfigWithDefault
 }
 
@@ -207,6 +209,7 @@ export interface NumberArrayBuilder {
 
 export interface BooleanArrayBuilder {
   type: 'booleanArray'
+  _config: Partial<BooleanArrayConfig>
   min(length: number): BooleanArrayBuilder
   max(length: number): BooleanArrayBuilder
   default(value: boolean[]): BooleanArrayConfigWithDefault
@@ -345,6 +348,32 @@ export function number(): NumberBuilder {
 export function boolean(): BooleanBuilder {
   const createBuilder = (config: Partial<BooleanConfig> = {}): BooleanBuilder => ({
     type: 'boolean',
+    _config: config,
+
+    array(): BooleanArrayBuilder {
+      // Create a BooleanArrayBuilder - booleans don't have constraints to carry over
+      const createBooleanArrayBuilder = (arrayConfig: Partial<BooleanArrayConfig> = {}): BooleanArrayBuilder => ({
+        type: 'booleanArray',
+        _config: arrayConfig,
+
+        min(length: number): BooleanArrayBuilder {
+          return createBooleanArrayBuilder({ ...arrayConfig, minLength: length })
+        },
+
+        max(length: number): BooleanArrayBuilder {
+          return createBooleanArrayBuilder({ ...arrayConfig, maxLength: length })
+        },
+
+        default(value: boolean[]): BooleanArrayConfigWithDefault {
+          return { type: 'booleanArray', ...arrayConfig, defaultValue: value }
+        },
+      })
+
+      return createBooleanArrayBuilder({
+        // Booleans don't have constraints to copy over (like min/max values)
+        // Just create a clean boolean array builder
+      })
+    },
 
     default(value: boolean): BooleanConfigWithDefault {
       return { type: 'boolean', ...config, defaultValue: value }
@@ -410,6 +439,7 @@ export function numberArray(): NumberArrayBuilder {
 export function booleanArray(): BooleanArrayBuilder {
   const createBuilder = (config: Partial<BooleanArrayConfig> = {}): BooleanArrayBuilder => ({
     type: 'booleanArray',
+    _config: config,
     
     min(length: number): BooleanArrayBuilder {
       return createBuilder({ ...config, minLength: length })
