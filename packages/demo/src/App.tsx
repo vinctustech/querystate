@@ -17,115 +17,134 @@ function App() {
   const schema = {
     // String with constraints
     name: qs.string().min(2).max(10).default('John'),
-    
+
     // String transformations
     username: qs.string().min(3).max(20).lowercase().default('user123'),
     displayName: qs.string().min(2).max(30).uppercase(),
-    
+
     // String validations
     email: qs.string().email().default('user@example.com'),
     website: qs.string().url(),
     userId: qs.string().uuid(),
-    
-    // Number with constraints  
+
+    // Number with constraints
     age: qs.number().min(0).max(120).default(25),
-    
+
     // Simple string without constraints
     category: qs.string(),
-    
+
     // Number without constraints
     score: qs.number(),
-    
+
     // Boolean with default
     isActive: qs.boolean().default(true),
-    
+
     // Simple boolean without default
     hasDiscount: qs.boolean(),
-    
+
     // String array with constraints (strings 2-10 chars, array 1-3 items)
     tags: qs.string().min(2).max(10).array().min(1).max(3).default(['react', 'typescript']),
-    
+
     // Simple string array without constraints
     categories: qs.string().array(),
-    
+
     // Number array with constraints (values 0-100, array 2-4 items)
     scores: qs.number().min(0).max(100).array().min(2).max(4).default([85, 92]),
-    
+
     // Simple number array without constraints
     ratings: qs.number().array(),
-    
+
     // Boolean array with constraints (array 1-3 items)
     features: qs.boolean().array().min(1).max(3).default([true, false]),
-    
+
     // Simple boolean array without constraints
     flags: qs.boolean().array(),
-    
+
     // String tuple (exactly 2 strings, min 2 chars each) - like first/last name
     fullName: qs.string().min(2).tuple(2),
-    
-    // String tuple with default (exactly 2 strings, min 2 chars each) - like default name  
+
+    // String tuple with default (exactly 2 strings, min 2 chars each) - like default name
     defaultName: { ...qs.string().min(2).tuple(2), defaultValue: ['Default', 'User'] } as any,
 
     // === DATE TYPES ===
-    
+
     // Basic date with default (today)
     startDate: qs.date().default(new Date()),
-    
+
     // Future date only
     eventDate: qs.date().future(),
-    
+
     // Date with min/max bounds
-    deadline: qs.date()
-      .min(new Date('2024-01-01'))
-      .max(new Date('2024-12-31')),
-    
+    deadline: qs.date().min(new Date('2024-01-01')).max(new Date('2024-12-31')),
+
     // Date range as tuple (exactly 2 dates)
     dateRange: qs.date().tuple(2),
-    
+
     // Date range with default (exactly 2 dates)
-    defaultDateRange: { 
-      ...qs.date().min(new Date('2024-01-01')).tuple(2), 
-      defaultValue: [new Date('2024-06-01'), new Date('2024-06-30')] 
-    } as any
+    defaultDateRange: qs.date().min(new Date('2024-01-01')).tuple(2).default([new Date('2024-06-01'), new Date('2024-06-30')]),
   }
-  
-  const { 
-    name, setName,
-    username, setUsername,
-    displayName, setDisplayName,
-    email, setEmail,
-    website, setWebsite,
-    userId, setUserId,
-    age, setAge, 
-    category, setCategory, 
-    score, setScore,
-    isActive, setIsActive,
-    hasDiscount, setHasDiscount,
-    tags, setTags,
-    categories, setCategories,
-    scores, setScores,
-    ratings, setRatings,
-    features, setFeatures,
-    flags, setFlags,
-    fullName, setFullName,
-    defaultName, setDefaultName,
-    startDate, setStartDate,
-    eventDate, setEventDate,
-    deadline, setDeadline,
-    dateRange, setDateRange,
-    defaultDateRange, setDefaultDateRange
+
+  const {
+    name,
+    setName,
+    username,
+    setUsername,
+    displayName,
+    setDisplayName,
+    email,
+    setEmail,
+    website,
+    setWebsite,
+    userId,
+    setUserId,
+    age,
+    setAge,
+    category,
+    setCategory,
+    score,
+    setScore,
+    isActive,
+    setIsActive,
+    hasDiscount,
+    setHasDiscount,
+    tags,
+    setTags,
+    categories,
+    setCategories,
+    scores,
+    setScores,
+    ratings,
+    setRatings,
+    features,
+    setFeatures,
+    flags,
+    setFlags,
+    fullName,
+    setFullName,
+    defaultName,
+    setDefaultName,
+    startDate,
+    setStartDate,
+    eventDate,
+    setEventDate,
+    deadline,
+    setDeadline,
+    dateRange,
+    setDateRange,
+    defaultDateRange,
+    setDefaultDateRange,
   } = useQueryState(schema)
-  
+
   // Debug output
   const hookDebug = (globalThis as any).queryStateDebug || []
-  
+
   const debugInfo = [
     `=== SCHEMA DEBUG ===`,
     `Schema name object: ${JSON.stringify(schema.name, null, 2)}`,
     `Schema name keys: ${Object.keys(schema.name).join(', ')}`,
     `Schema name defaultValue: ${(schema.name as any).defaultValue}`,
     ``,
-    `Schema age object: ${JSON.stringify(schema.age, null, 2)}`, 
+    `Schema age object: ${JSON.stringify(schema.age, null, 2)}`,
     `Schema age keys: ${Object.keys(schema.age).join(', ')}`,
     `Schema age defaultValue: ${(schema.age as any).defaultValue}`,
     ``,
@@ -148,24 +167,24 @@ function App() {
     `Current URL params: ${window.location.search}`,
     ``,
     `=== HOOK DEBUG ===`,
-    ...hookDebug
+    ...hookDebug,
   ].join('\n')
-  
+
   const buttonStyle = {
-    background: '#1890ff', 
-    color: 'white', 
-    border: 'none', 
+    background: '#1890ff',
+    color: 'white',
+    border: 'none',
     padding: '6px 12px',
     borderRadius: '4px',
     cursor: 'pointer',
-    margin: '2px'
+    margin: '2px',
   }
-  
+
   const clearButtonStyle = {
     ...buttonStyle,
-    background: '#ff4d4f'
+    background: '#ff4d4f',
   }
-  
+
   // Helper to display values clearly
   const displayValue = (value: any) => {
     if (value === undefined) {
@@ -176,7 +195,7 @@ function App() {
     }
     return <span style={{ color: '#fff' }}>{String(value)}</span>
   }
-  
+
   // Section separator styles
   const majorSeparatorStyle = {
     fontSize: '20px',
@@ -185,9 +204,9 @@ function App() {
     borderBottom: '2px solid #4CAF50',
     paddingBottom: '8px',
     marginBottom: '15px',
-    marginTop: '30px'
+    marginTop: '30px',
   }
-  
+
   const minorSeparatorStyle = {
     fontSize: '16px',
     fontWeight: 'bold',
@@ -195,15 +214,17 @@ function App() {
     borderBottom: '1px solid #2196F3',
     paddingBottom: '4px',
     marginBottom: '10px',
-    marginTop: '20px'
+    marginTop: '20px',
   }
-  
+
   return (
     <div style={{ color: 'white', padding: '20px', fontFamily: 'monospace' }}>
-      <h1><code>useQueryState</code> Demo App</h1>
-      
+      <h1>
+        <code>useQueryState</code> Demo App
+      </h1>
+
       <div style={majorSeparatorStyle}>📝 Single Value Types</div>
-      
+
       <div style={minorSeparatorStyle}>String Parameters</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>String with constraints (min: 2, max: 10, default: 'John')</h3>
@@ -221,7 +242,7 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>Simple string (no constraints)</h3>
         <p>Category: {displayValue(category)}</p>
@@ -253,7 +274,7 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>Uppercase string (min: 2, max: 30)</h3>
         <p>Display Name: {displayValue(displayName)}</p>
@@ -288,7 +309,7 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>URL validation</h3>
         <p>Website: {displayValue(website)}</p>
@@ -305,24 +326,30 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>UUID validation</h3>
         <p>User ID: {displayValue(userId)}</p>
-        <button style={buttonStyle} onClick={() => setUserId('550e8400-e29b-41d4-a716-446655440000')}>
+        <button
+          style={buttonStyle}
+          onClick={() => setUserId('550e8400-e29b-41d4-a716-446655440000')}
+        >
           Set valid UUID
         </button>
         <button style={buttonStyle} onClick={() => setUserId('invalid-uuid')}>
           Set 'invalid-uuid' (invalid)
         </button>
-        <button style={buttonStyle} onClick={() => setUserId('123e4567-e89b-12d3-a456-426614174000')}>
+        <button
+          style={buttonStyle}
+          onClick={() => setUserId('123e4567-e89b-12d3-a456-426614174000')}
+        >
           Set another valid UUID
         </button>
         <button style={clearButtonStyle} onClick={() => setUserId(undefined)}>
           Clear
         </button>
       </div>
-      
+
       <div style={minorSeparatorStyle}>Number Parameters</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>Number with constraints (min: 0, max: 120, default: 25)</h3>
@@ -340,7 +367,7 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>Simple number (no constraints)</h3>
         <p>Score: {displayValue(score)}</p>
@@ -354,7 +381,7 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={minorSeparatorStyle}>Boolean Parameters</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>Boolean with default (default: true)</h3>
@@ -369,7 +396,7 @@ function App() {
           Clear (revert to default)
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>Simple boolean (no default)</h3>
         <p>Has Discount: {displayValue(hasDiscount)}</p>
@@ -383,9 +410,9 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={majorSeparatorStyle}>🔢 Array Types</div>
-      
+
       <div style={minorSeparatorStyle}>String Arrays</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>String array with constraints (min: 1, max: 3, default: ['react', 'typescript'])</h3>
@@ -393,7 +420,10 @@ function App() {
         <button style={buttonStyle} onClick={() => setTags([])}>
           Set [] (too few)
         </button>
-        <button style={buttonStyle} onClick={() => setTags(['react', 'typescript', 'javascript', 'node'])}>
+        <button
+          style={buttonStyle}
+          onClick={() => setTags(['react', 'typescript', 'javascript', 'node'])}
+        >
           Set 4 items (will truncate to 3)
         </button>
         <button style={buttonStyle} onClick={() => setTags(['vue', 'angular'])}>
@@ -403,10 +433,12 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>Simple string array (no constraints)</h3>
-        <p>Categories: {displayValue(Array.isArray(categories) ? categories.join(', ') : categories)}</p>
+        <p>
+          Categories: {displayValue(Array.isArray(categories) ? categories.join(', ') : categories)}
+        </p>
         <button style={buttonStyle} onClick={() => setCategories(['tech', 'design'])}>
           Set ['tech', 'design']
         </button>
@@ -417,7 +449,7 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={minorSeparatorStyle}>Number Arrays</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>Number array with constraints (min: 2, max: 4, values: 0-100, default: [85, 92])</h3>
@@ -438,7 +470,7 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>Simple number array (no constraints)</h3>
         <p>Ratings: {displayValue(Array.isArray(ratings) ? ratings.join(', ') : ratings)}</p>
@@ -452,7 +484,7 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={minorSeparatorStyle}>Boolean Arrays</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>Boolean array with constraints (min: 1, max: 3, default: [true, false])</h3>
@@ -470,7 +502,7 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>Simple boolean array (no constraints)</h3>
         <p>Flags: {displayValue(Array.isArray(flags) ? flags.join(', ') : flags)}</p>
@@ -484,9 +516,9 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={majorSeparatorStyle}>🎯 Tuple Types</div>
-      
+
       <div style={minorSeparatorStyle}>String Tuples</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>String tuple (exactly 2 strings, min 2 chars each) - Full Name</h3>
@@ -502,10 +534,16 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
-        <h3>String tuple with default (exactly 2 strings, min 2 chars each, default: ['Default', 'User'])</h3>
-        <p>Default Name: {displayValue(Array.isArray(defaultName) ? defaultName.join(', ') : defaultName)}</p>
+        <h3>
+          String tuple with default (exactly 2 strings, min 2 chars each, default: ['Default',
+          'User'])
+        </h3>
+        <p>
+          Default Name:{' '}
+          {displayValue(Array.isArray(defaultName) ? defaultName.join(', ') : defaultName)}
+        </p>
         <button style={buttonStyle} onClick={() => setDefaultName(['Admin', 'User'])}>
           Set ['Admin', 'User'] (valid)
         </button>
@@ -516,9 +554,9 @@ function App() {
           Clear (revert to default)
         </button>
       </div>
-      
+
       <div style={majorSeparatorStyle}>📅 Date Types</div>
-      
+
       <div style={minorSeparatorStyle}>Basic Dates</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>Date with default (default: today)</h3>
@@ -533,7 +571,7 @@ function App() {
           Clear (revert to default)
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>Future date only</h3>
         <p>Event Date: {displayValue(eventDate ? eventDate.toISOString() : eventDate)}</p>
@@ -550,7 +588,7 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>Date with min/max bounds (2024 only)</h3>
         <p>Deadline: {displayValue(deadline ? deadline.toISOString() : deadline)}</p>
@@ -567,43 +605,67 @@ function App() {
           Clear
         </button>
       </div>
-      
+
       <div style={minorSeparatorStyle}>Date Tuples</div>
       <div style={{ marginBottom: '20px' }}>
         <h3>Date range as tuple (exactly 2 dates)</h3>
-        <p>Date Range: {displayValue(Array.isArray(dateRange) ? dateRange.map(d => d?.toISOString()).join(' to ') : dateRange)}</p>
-        <button style={buttonStyle} onClick={() => setDateRange([new Date('2024-06-01'), new Date('2024-06-30')])}>
+        <p>
+          Date Range:{' '}
+          {displayValue(
+            Array.isArray(dateRange)
+              ? dateRange.map((d) => d?.toISOString()).join(' to ')
+              : dateRange,
+          )}
+        </p>
+        <button
+          style={buttonStyle}
+          onClick={() => setDateRange([new Date('2024-06-01'), new Date('2024-06-30')])}
+        >
           Set June 2024 range
         </button>
-        <button style={buttonStyle} onClick={() => setDateRange([new Date('2024-12-01'), new Date('2024-12-31')])}>
+        <button
+          style={buttonStyle}
+          onClick={() => setDateRange([new Date('2024-12-01'), new Date('2024-12-31')])}
+        >
           Set December 2024 range
         </button>
         <button style={clearButtonStyle} onClick={() => setDateRange(undefined)}>
           Clear
         </button>
       </div>
-      
+
       <div style={{ marginBottom: '20px' }}>
         <h3>Date range with default (exactly 2 dates, min: 2024-01-01, default: June 2024)</h3>
-        <p>Default Date Range: {displayValue(Array.isArray(defaultDateRange) ? defaultDateRange.map(d => d?.toISOString()).join(' to ') : defaultDateRange)}</p>
-        <button style={buttonStyle} onClick={() => setDefaultDateRange([new Date('2024-08-01'), new Date('2024-08-31')])}>
+        <p>
+          Default Date Range:{' '}
+          {displayValue(
+            Array.isArray(defaultDateRange)
+              ? defaultDateRange.map((d) => d?.toISOString()).join(' to ')
+              : defaultDateRange,
+          )}
+        </p>
+        <button
+          style={buttonStyle}
+          onClick={() => setDefaultDateRange([new Date('2024-08-01'), new Date('2024-08-31')])}
+        >
           Set August 2024 range
         </button>
-        <button style={buttonStyle} onClick={() => setDefaultDateRange([new Date('2023-01-01'), new Date('2023-01-31')])}>
+        <button
+          style={buttonStyle}
+          onClick={() => setDefaultDateRange([new Date('2023-01-01'), new Date('2023-01-31')])}
+        >
           Set 2023 range (before min)
         </button>
         <button style={clearButtonStyle} onClick={() => setDefaultDateRange(undefined)}>
           Clear (revert to default)
         </button>
       </div>
-      
+
       <div style={{ marginTop: '30px', padding: '10px', background: '#333', borderRadius: '4px' }}>
         <h3>Current URL:</h3>
-        <p style={{ wordBreak: 'break-all' }}>
-          {window.location.search || '(empty)'}
-        </p>
+        <p style={{ wordBreak: 'break-all' }}>{window.location.search || '(empty)'}</p>
       </div>
-      
+
       <div style={{ marginTop: '20px', padding: '10px', background: '#222', borderRadius: '4px' }}>
         <h3>Debug Output:</h3>
         <textarea
@@ -618,7 +680,7 @@ function App() {
             color: '#ccc',
             border: '1px solid #555',
             padding: '10px',
-            resize: 'vertical'
+            resize: 'vertical',
           }}
         />
       </div>

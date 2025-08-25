@@ -479,7 +479,7 @@ export interface DateBuilder {
   future(): DateBuilder
   past(): DateBuilder
   array(): DateArrayBuilder
-  tuple(length: number): DateTuple2Config
+  tuple(length: number): DateTuple2Builder
   default(value: Date): DateConfigWithDefault
 }
 
@@ -566,14 +566,21 @@ export function string(): StringBuilder {
       })
     },
 
-    tuple(length: number): StringTuple2Config {
-      // For now, only support tuple(2) for date ranges
+    tuple(length: number): StringTuple2Builder {
+      // For now, only support tuple(2)
       if (length !== 2) {
         throw new Error('Only tuple(2) is currently supported')
       }
       
-      return {
+      const createStringTuple2Builder = (tupleConfig: Partial<StringTuple2Config> = {}): StringTuple2Builder => ({
         type: 'stringTuple2',
+        _config: tupleConfig,
+        default(value: [string, string]): StringTuple2ConfigWithDefault {
+          return { type: 'stringTuple2', ...tupleConfig, defaultValue: value }
+        },
+      })
+      
+      return createStringTuple2Builder({
         // Copy over the string constraints from the StringBuilder
         minLength: config.minLength,
         maxLength: config.maxLength,
@@ -582,7 +589,7 @@ export function string(): StringBuilder {
         email: config.email,
         url: config.url,
         uuid: config.uuid,
-      }
+      })
     },
 
     default(value: string): StringConfigWithDefault {
@@ -826,18 +833,25 @@ export function date(): DateBuilder {
       })
     },
 
-    tuple(length: number): DateTuple2Config {
+    tuple(length: number): DateTuple2Builder {
       if (length !== 2) {
         throw new Error('Only tuple(2) is currently supported')
       }
       
-      return {
+      const createDateTuple2Builder = (tupleConfig: Partial<DateTuple2Config> = {}): DateTuple2Builder => ({
         type: 'dateTuple2',
+        _config: tupleConfig,
+        default(value: [Date, Date]): DateTuple2ConfigWithDefault {
+          return { type: 'dateTuple2', ...tupleConfig, defaultValue: value }
+        },
+      })
+      
+      return createDateTuple2Builder({
         min: config.min,
         max: config.max,
         future: config.future,
         past: config.past,
-      }
+      })
     },
 
     default(value: Date): DateConfigWithDefault {
@@ -1330,17 +1344,13 @@ function validateValue(value: any, config: Config): any {
 
   if (config.type === 'stringTuple2') {
     // String tuple validation
-    console.log('🔍 validateValue stringTuple2 - Input:', value, 'Config:', config)
-    
     if (!Array.isArray(value) || value.length !== 2) {
-      console.log('❌ validateValue stringTuple2 - Invalid array or length, returning default:', defaultValue)
       return defaultValue
     }
 
     // Apply string constraints to each tuple item
-    const processedTuple = value.map((item, index) => {
+    const processedTuple = value.map((item) => {
       let stringValue = String(item)
-      console.log(`🔍 validateValue stringTuple2 - Processing item ${index}: "${stringValue}"`)
 
       // Apply transformation constraints
       const isLowercase = getConfigValue(config, 'lowercase')
@@ -1355,10 +1365,8 @@ function validateValue(value: any, config: Config): any {
       // Apply length constraints
       const minLength = getMinLength(config)
       const maxLength = getMaxLength(config)
-      console.log(`🔍 validateValue stringTuple2 - Item ${index}: minLength=${minLength}, maxLength=${maxLength}, stringValue.length=${stringValue.length}`)
 
       if (minLength && stringValue.length < minLength) {
-        console.log(`❌ validateValue stringTuple2 - Item ${index} "${stringValue}" too short (${stringValue.length} < ${minLength})`)
         return null // Invalid item
       }
       if (maxLength && stringValue.length > maxLength) {
@@ -1371,30 +1379,75 @@ function validateValue(value: any, config: Config): any {
       const isUuid = getConfigValue(config, 'uuid')
 
       if (isEmail && !isValidEmail(stringValue)) {
-        console.log(`❌ validateValue stringTuple2 - Item ${index} "${stringValue}" invalid email`)
         return null // Invalid item
       }
       if (isUrl && !isValidUrl(stringValue)) {
-        console.log(`❌ validateValue stringTuple2 - Item ${index} "${stringValue}" invalid URL`)
         return null // Invalid item
       }
       if (isUuid && !isValidUuid(stringValue)) {
-        console.log(`❌ validateValue stringTuple2 - Item ${index} "${stringValue}" invalid UUID`)
         return null // Invalid item
       }
 
-      console.log(`✅ validateValue stringTuple2 - Item ${index} "${stringValue}" valid`)
       return stringValue
     })
 
     // If any item is invalid, return default
     if (processedTuple.some(item => item === null)) {
-      console.log('❌ validateValue stringTuple2 - Some items invalid, returning default:', defaultValue)
       return defaultValue
     }
 
-    console.log('✅ validateValue stringTuple2 - All items valid, returning tuple:', processedTuple)
     return processedTuple as [string, string]
+  }
+
+  if (config.type === 'dateTuple2') {
+    // Date tuple validation
+    if (!Array.isArray(value) || value.length !== 2) {
+      return defaultValue
+    }
+
+    // Apply date constraints to each tuple item
+    const processedTuple = value.map(item => {
+      let dateValue: Date
+      
+      if (item instanceof Date) {
+        dateValue = item
+      } else {
+        dateValue = new Date(String(item))
+      }
+      
+      // Check if date is valid
+      if (isNaN(dateValue.getTime())) {
+        return null // Invalid date
+      }
+
+      // Apply date constraints
+      const min = getConfigValue(config, 'min')
+      const max = getConfigValue(config, 'max')
+      const future = getConfigValue(config, 'future')
+      const past = getConfigValue(config, 'past')
+
+      if (min && dateValue < min) {
+        return null // Date before minimum
+      }
+      if (max && dateValue > max) {
+        return null // Date after maximum
+      }
+      if (future && dateValue <= new Date()) {
+        return null // Date not in future
+      }
+      if (past && dateValue >= new Date()) {
+        return null // Date not in past
+      }
+
+      return dateValue
+    })
+
+    // If any date is invalid, return default
+    if (processedTuple.some(item => item === null)) {
+      return defaultValue
+    }
+
+    return processedTuple as [Date, Date]
   }
 
   return value
