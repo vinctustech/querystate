@@ -19,8 +19,7 @@
   ],
   "scripts": {
     "build": "rollup -c",
-    "dev": "rollup -c -w",
-    "test": "jest"
+    "dev": "rollup -c -w"
   },
   "publishConfig": {
     "access": "public"

@@ -64,7 +64,7 @@ function App() {
     fullName: qs.string().min(2).tuple(2),
 
     // String tuple with default (exactly 2 strings, min 2 chars each) - like default name
-    defaultName: { ...qs.string().min(2).tuple(2), defaultValue: ['Default', 'User'] } as any,
+    defaultName: qs.string().min(2).tuple(2).default(['Default', 'User']),
 
     // === DATE TYPES ===
 
@@ -542,7 +542,7 @@ function App() {
         </h3>
         <p>
           Default Name:{' '}
-          {displayValue(Array.isArray(defaultName) ? defaultName.join(', ') : defaultName)}
+          {displayValue(defaultName.join(', '))}
         </p>
         <button style={buttonStyle} onClick={() => setDefaultName(['Admin', 'User'])}>
           Set ['Admin', 'User'] (valid)

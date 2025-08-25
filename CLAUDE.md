@@ -72,10 +72,7 @@ cd packages/demo && npm run build
 
 ### Testing Approach
 
-The library uses Jest for testing (though test files aren't currently present). To run tests:
-```bash
-npm run test
-```
+The library uses interactive testing via the demo application. All features are tested through button-based interactive tests that provide immediate feedback and cover edge cases.
 
 ### Dependencies
 

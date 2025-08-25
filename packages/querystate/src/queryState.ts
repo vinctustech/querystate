@@ -39,11 +39,11 @@ export interface StringArrayConfig {
   type: 'stringArray'
   defaultValue?: string[]
   // Array constraints
-  minLength?: number  // Min array length
-  maxLength?: number  // Max array length
+  minLength?: number // Min array length
+  maxLength?: number // Max array length
   // Individual string constraints (from string builder)
-  stringMinLength?: number  // Min length of each string
-  stringMaxLength?: number  // Max length of each string  
+  stringMinLength?: number // Min length of each string
+  stringMaxLength?: number // Max length of each string
   lowercase?: boolean
   uppercase?: boolean
   email?: boolean
@@ -360,42 +360,75 @@ export type Config =
   | DateTuple2Builder
 
 // Type helper to infer the value type from a config
-type InferConfigType<T extends Config> = 
-  T extends StringConfigWithDefault ? string :
-  T extends StringConfig ? string | undefined :
-  T extends StringBuilder ? string | undefined :
-  T extends NumberConfigWithDefault ? number :
-  T extends NumberConfig ? number | undefined :
-  T extends NumberBuilder ? number | undefined :
-  T extends BooleanConfigWithDefault ? boolean :
-  T extends BooleanConfig ? boolean | undefined :
-  T extends BooleanBuilder ? boolean | undefined :
-  T extends DateConfigWithDefault ? Date :
-  T extends DateConfig ? Date | undefined :
-  T extends DateBuilder ? Date | undefined :
-  T extends StringArrayConfigWithDefault ? string[] :
-  T extends StringArrayConfig ? string[] | undefined :
-  T extends StringArrayBuilder ? string[] | undefined :
-  T extends NumberArrayConfigWithDefault ? number[] :
-  T extends NumberArrayConfig ? number[] | undefined :
-  T extends NumberArrayBuilder ? number[] | undefined :
-  T extends BooleanArrayConfigWithDefault ? boolean[] :
-  T extends BooleanArrayConfig ? boolean[] | undefined :
-  T extends BooleanArrayBuilder ? boolean[] | undefined :
-  T extends DateArrayConfigWithDefault ? Date[] :
-  T extends DateArrayConfig ? Date[] | undefined :
-  T extends DateArrayBuilder ? Date[] | undefined :
-  T extends StringTuple2ConfigWithDefault ? [string, string] :
-  T extends StringTuple2Config ? [string, string] | undefined :
-  T extends StringTuple2Builder ? [string, string] | undefined :
-  T extends NumberTuple2ConfigWithDefault ? [number, number] :
-  T extends NumberTuple2Config ? [number, number] | undefined :
-  T extends BooleanTuple2ConfigWithDefault ? [boolean, boolean] :
-  T extends BooleanTuple2Config ? [boolean, boolean] | undefined :
-  T extends DateTuple2ConfigWithDefault ? [Date, Date] :
-  T extends DateTuple2Config ? [Date, Date] | undefined :
-  T extends DateTuple2Builder ? [Date, Date] | undefined :
-  never
+type InferConfigType<T extends Config> = T extends StringConfigWithDefault
+  ? string
+  : T extends StringConfig
+    ? string | undefined
+    : T extends StringBuilder
+      ? string | undefined
+      : T extends NumberConfigWithDefault
+        ? number
+        : T extends NumberConfig
+          ? number | undefined
+          : T extends NumberBuilder
+            ? number | undefined
+            : T extends BooleanConfigWithDefault
+              ? boolean
+              : T extends BooleanConfig
+                ? boolean | undefined
+                : T extends BooleanBuilder
+                  ? boolean | undefined
+                  : T extends DateConfigWithDefault
+                    ? Date
+                    : T extends DateConfig
+                      ? Date | undefined
+                      : T extends DateBuilder
+                        ? Date | undefined
+                        : T extends StringArrayConfigWithDefault
+                          ? string[]
+                          : T extends StringArrayConfig
+                            ? string[] | undefined
+                            : T extends StringArrayBuilder
+                              ? string[] | undefined
+                              : T extends NumberArrayConfigWithDefault
+                                ? number[]
+                                : T extends NumberArrayConfig
+                                  ? number[] | undefined
+                                  : T extends NumberArrayBuilder
+                                    ? number[] | undefined
+                                    : T extends BooleanArrayConfigWithDefault
+                                      ? boolean[]
+                                      : T extends BooleanArrayConfig
+                                        ? boolean[] | undefined
+                                        : T extends BooleanArrayBuilder
+                                          ? boolean[] | undefined
+                                          : T extends DateArrayConfigWithDefault
+                                            ? Date[]
+                                            : T extends DateArrayConfig
+                                              ? Date[] | undefined
+                                              : T extends DateArrayBuilder
+                                                ? Date[] | undefined
+                                                : T extends StringTuple2ConfigWithDefault
+                                                  ? [string, string]
+                                                  : T extends StringTuple2Config
+                                                    ? [string, string] | undefined
+                                                    : T extends StringTuple2Builder
+                                                      ? [string, string] | undefined
+                                                      : T extends NumberTuple2ConfigWithDefault
+                                                        ? [number, number]
+                                                        : T extends NumberTuple2Config
+                                                          ? [number, number] | undefined
+                                                          : T extends BooleanTuple2ConfigWithDefault
+                                                            ? [boolean, boolean]
+                                                            : T extends BooleanTuple2Config
+                                                              ? [boolean, boolean] | undefined
+                                                              : T extends DateTuple2ConfigWithDefault
+                                                                ? [Date, Date]
+                                                                : T extends DateTuple2Config
+                                                                  ? [Date, Date] | undefined
+                                                                  : T extends DateTuple2Builder
+                                                                    ? [Date, Date] | undefined
+                                                                    : never
 
 // Type helper to create setter function type - always accepts undefined for clearing
 type SetterType<T> = (value: T | undefined) => void
@@ -418,7 +451,7 @@ export interface StringBuilder {
   url(): StringBuilder
   uuid(): StringBuilder
   array(): StringArrayBuilder
-  tuple(length: number): StringTuple2Config  // For now, just support tuple(2)
+  tuple(length: number): StringTuple2Builder // For now, just support tuple(2)
   default(value: string): StringConfigWithDefault
 }
 
@@ -445,7 +478,6 @@ export interface BooleanBuilder {
   array(): BooleanArrayBuilder
   default(value: boolean): BooleanConfigWithDefault
 }
-
 
 export interface NumberArrayBuilder {
   type: 'numberArray'
@@ -537,7 +569,9 @@ export function string(): StringBuilder {
 
     array(): StringArrayBuilder {
       // Create a StringArrayBuilder with the string constraints
-      const createStringArrayBuilder = (arrayConfig: Partial<StringArrayConfig> = {}): StringArrayBuilder => ({
+      const createStringArrayBuilder = (
+        arrayConfig: Partial<StringArrayConfig> = {},
+      ): StringArrayBuilder => ({
         type: 'stringArray',
         _config: arrayConfig,
 
@@ -555,7 +589,7 @@ export function string(): StringBuilder {
       })
 
       return createStringArrayBuilder({
-        // Copy over the string constraints from the StringBuilder  
+        // Copy over the string constraints from the StringBuilder
         stringMinLength: config.minLength,
         stringMaxLength: config.maxLength,
         lowercase: config.lowercase,
@@ -571,15 +605,17 @@ export function string(): StringBuilder {
       if (length !== 2) {
         throw new Error('Only tuple(2) is currently supported')
       }
-      
-      const createStringTuple2Builder = (tupleConfig: Partial<StringTuple2Config> = {}): StringTuple2Builder => ({
+
+      const createStringTuple2Builder = (
+        tupleConfig: Partial<StringTuple2Config> = {},
+      ): StringTuple2Builder => ({
         type: 'stringTuple2',
         _config: tupleConfig,
         default(value: [string, string]): StringTuple2ConfigWithDefault {
           return { type: 'stringTuple2', ...tupleConfig, defaultValue: value }
         },
       })
-      
+
       return createStringTuple2Builder({
         // Copy over the string constraints from the StringBuilder
         minLength: config.minLength,
@@ -616,7 +652,9 @@ export function number(): NumberBuilder {
 
     array(): NumberArrayBuilder {
       // Create a NumberArrayBuilder with the number constraints
-      const createNumberArrayBuilder = (arrayConfig: Partial<NumberArrayConfig> = {}): NumberArrayBuilder => ({
+      const createNumberArrayBuilder = (
+        arrayConfig: Partial<NumberArrayConfig> = {},
+      ): NumberArrayBuilder => ({
         type: 'numberArray',
         _config: arrayConfig,
 
@@ -664,7 +702,9 @@ export function boolean(): BooleanBuilder {
 
     array(): BooleanArrayBuilder {
       // Create a BooleanArrayBuilder - booleans don't have constraints to carry over
-      const createBooleanArrayBuilder = (arrayConfig: Partial<BooleanArrayConfig> = {}): BooleanArrayBuilder => ({
+      const createBooleanArrayBuilder = (
+        arrayConfig: Partial<BooleanArrayConfig> = {},
+      ): BooleanArrayBuilder => ({
         type: 'booleanArray',
         _config: arrayConfig,
 
@@ -722,28 +762,28 @@ export function numberArray(): NumberArrayBuilder {
   const createBuilder = (config: Partial<NumberArrayConfig> = {}): NumberArrayBuilder => ({
     type: 'numberArray',
     _config: config,
-    
+
     min(length: number): NumberArrayBuilder {
       return createBuilder({ ...config, minLength: length })
     },
-    
+
     max(length: number): NumberArrayBuilder {
       return createBuilder({ ...config, maxLength: length })
     },
-    
+
     minValue(value: number): NumberArrayBuilder {
       return createBuilder({ ...config, min: value })
     },
-    
+
     maxValue(value: number): NumberArrayBuilder {
       return createBuilder({ ...config, max: value })
     },
-    
+
     default(value: number[]): NumberArrayConfigWithDefault {
       return { type: 'numberArray', ...config, defaultValue: value }
     },
   })
-  
+
   return createBuilder()
 }
 
@@ -752,20 +792,20 @@ export function booleanArray(): BooleanArrayBuilder {
   const createBuilder = (config: Partial<BooleanArrayConfig> = {}): BooleanArrayBuilder => ({
     type: 'booleanArray',
     _config: config,
-    
+
     min(length: number): BooleanArrayBuilder {
       return createBuilder({ ...config, minLength: length })
     },
-    
+
     max(length: number): BooleanArrayBuilder {
       return createBuilder({ ...config, maxLength: length })
     },
-    
+
     default(value: boolean[]): BooleanArrayConfigWithDefault {
       return { type: 'booleanArray', ...config, defaultValue: value }
     },
   })
-  
+
   return createBuilder()
 }
 
@@ -792,7 +832,9 @@ export function date(): DateBuilder {
     },
 
     array(): DateArrayBuilder {
-      const createDateArrayBuilder = (arrayConfig: Partial<DateArrayConfig> = {}): DateArrayBuilder => ({
+      const createDateArrayBuilder = (
+        arrayConfig: Partial<DateArrayConfig> = {},
+      ): DateArrayBuilder => ({
         type: 'dateArray',
         _config: arrayConfig,
 
@@ -837,15 +879,17 @@ export function date(): DateBuilder {
       if (length !== 2) {
         throw new Error('Only tuple(2) is currently supported')
       }
-      
-      const createDateTuple2Builder = (tupleConfig: Partial<DateTuple2Config> = {}): DateTuple2Builder => ({
+
+      const createDateTuple2Builder = (
+        tupleConfig: Partial<DateTuple2Config> = {},
+      ): DateTuple2Builder => ({
         type: 'dateTuple2',
         _config: tupleConfig,
         default(value: [Date, Date]): DateTuple2ConfigWithDefault {
           return { type: 'dateTuple2', ...tupleConfig, defaultValue: value }
         },
       })
-      
+
       return createDateTuple2Builder({
         min: config.min,
         max: config.max,
@@ -876,7 +920,7 @@ function parseValue(rawValue: string | null, config: Config): any {
     // Apply transformation constraints first
     const isLowercase = getConfigValue(config, 'lowercase')
     const isUppercase = getConfigValue(config, 'uppercase')
-    
+
     if (isLowercase) {
       value = value.toLowerCase()
     } else if (isUppercase) {
@@ -943,7 +987,7 @@ function parseValue(rawValue: string | null, config: Config): any {
   if (config.type === 'date') {
     // Parse ISO date string
     const parsed = new Date(rawValue)
-    
+
     // Check if date is valid
     if (isNaN(parsed.getTime())) {
       return defaultValue
@@ -974,16 +1018,16 @@ function parseValue(rawValue: string | null, config: Config): any {
   if (config.type === 'dateTuple2') {
     // Parse comma-separated string into tuple of exactly 2 dates
     const parsed = rawValue.split(',')
-    
+
     // Must have exactly 2 items
     if (parsed.length !== 2) {
       return defaultValue
     }
 
     // Parse each date
-    const processedTuple = parsed.map(item => {
+    const processedTuple = parsed.map((item) => {
       const date = new Date(item)
-      
+
       // Check if date is valid
       if (isNaN(date.getTime())) {
         return null
@@ -1012,7 +1056,7 @@ function parseValue(rawValue: string | null, config: Config): any {
     })
 
     // If any date is invalid, return default
-    if (processedTuple.some(item => item === null)) {
+    if (processedTuple.some((item) => item === null)) {
       return defaultValue
     }
 
@@ -1040,17 +1084,17 @@ function parseValue(rawValue: string | null, config: Config): any {
 
   if (config.type === 'numberArray') {
     // Parse comma-separated string into number array
-    const parsed = rawValue.split(',').map(v => parseFloat(v))
-    
+    const parsed = rawValue.split(',').map((v) => parseFloat(v))
+
     // Check for invalid numbers
     if (parsed.some(isNaN)) {
       return defaultValue
     }
-    
+
     // Apply value constraints to each number
     const min = getMin(config)
     const max = getMax(config)
-    let value = parsed.map(n => {
+    let value = parsed.map((n) => {
       let num = n
       if (min !== undefined && num < min) num = min
       if (max !== undefined && num > max) num = max
@@ -1073,7 +1117,7 @@ function parseValue(rawValue: string | null, config: Config): any {
 
   if (config.type === 'booleanArray') {
     // Parse comma-separated string into boolean array
-    const parsed = rawValue.split(',').map(v => {
+    const parsed = rawValue.split(',').map((v) => {
       const lower = v.toLowerCase().trim()
       return lower === 'true' || lower === '1' || lower === 'yes'
     })
@@ -1096,20 +1140,20 @@ function parseValue(rawValue: string | null, config: Config): any {
   if (config.type === 'stringTuple2') {
     // Parse comma-separated string into tuple of exactly 2 strings
     const parsed = rawValue.split(',')
-    
+
     // Must have exactly 2 items
     if (parsed.length !== 2) {
       return defaultValue
     }
 
     // Apply string constraints to each tuple item
-    const processedTuple = parsed.map(item => {
+    const processedTuple = parsed.map((item) => {
       let value = item
 
       // Apply transformation constraints
       const isLowercase = getConfigValue(config, 'lowercase')
       const isUppercase = getConfigValue(config, 'uppercase')
-      
+
       if (isLowercase) {
         value = value.toLowerCase()
       } else if (isUppercase) {
@@ -1146,7 +1190,7 @@ function parseValue(rawValue: string | null, config: Config): any {
     })
 
     // If any item is invalid, return default
-    if (processedTuple.some(item => item === null)) {
+    if (processedTuple.some((item) => item === null)) {
       return defaultValue
     }
 
@@ -1170,7 +1214,7 @@ function validateValue(value: any, config: Config): any {
     // Apply transformation constraints first
     const isLowercase = getConfigValue(config, 'lowercase')
     const isUppercase = getConfigValue(config, 'uppercase')
-    
+
     if (isLowercase) {
       stringValue = stringValue.toLowerCase()
     } else if (isUppercase) {
@@ -1236,13 +1280,13 @@ function validateValue(value: any, config: Config): any {
   if (config.type === 'date') {
     // Date validation
     let dateValue: Date
-    
+
     if (value instanceof Date) {
       dateValue = value
     } else {
       dateValue = new Date(String(value))
     }
-    
+
     // Check if date is valid
     if (isNaN(dateValue.getTime())) {
       return defaultValue
@@ -1292,17 +1336,17 @@ function validateValue(value: any, config: Config): any {
   if (config.type === 'numberArray') {
     // Number array validation
     const arrayValue = Array.isArray(value) ? value : [value]
-    
+
     // Convert to numbers and validate
-    const parsed = arrayValue.map(v => typeof v === 'number' ? v : parseFloat(String(v)))
+    const parsed = arrayValue.map((v) => (typeof v === 'number' ? v : parseFloat(String(v))))
     if (parsed.some(isNaN)) {
       return defaultValue
     }
-    
+
     // Apply value constraints to each number
     const min = getMin(config)
     const max = getMax(config)
-    let validatedValue = parsed.map(n => {
+    let validatedValue = parsed.map((n) => {
       let num = n
       if (min !== undefined && num < min) num = min
       if (max !== undefined && num > max) num = max
@@ -1355,7 +1399,7 @@ function validateValue(value: any, config: Config): any {
       // Apply transformation constraints
       const isLowercase = getConfigValue(config, 'lowercase')
       const isUppercase = getConfigValue(config, 'uppercase')
-      
+
       if (isLowercase) {
         stringValue = stringValue.toLowerCase()
       } else if (isUppercase) {
@@ -1392,7 +1436,7 @@ function validateValue(value: any, config: Config): any {
     })
 
     // If any item is invalid, return default
-    if (processedTuple.some(item => item === null)) {
+    if (processedTuple.some((item) => item === null)) {
       return defaultValue
     }
 
@@ -1406,15 +1450,15 @@ function validateValue(value: any, config: Config): any {
     }
 
     // Apply date constraints to each tuple item
-    const processedTuple = value.map(item => {
+    const processedTuple = value.map((item) => {
       let dateValue: Date
-      
+
       if (item instanceof Date) {
         dateValue = item
       } else {
         dateValue = new Date(String(item))
       }
-      
+
       // Check if date is valid
       if (isNaN(dateValue.getTime())) {
         return null // Invalid date
@@ -1443,7 +1487,7 @@ function validateValue(value: any, config: Config): any {
     })
 
     // If any date is invalid, return default
-    if (processedTuple.some(item => item === null)) {
+    if (processedTuple.some((item) => item === null)) {
       return defaultValue
     }
 
@@ -1480,7 +1524,9 @@ function serializeValue(value: any, config: Config): string | undefined {
 
   if (config.type === 'dateTuple2') {
     // Serialize date tuple as comma-separated ISO strings
-    return Array.isArray(value) ? value.map(d => d instanceof Date ? d.toISOString() : String(d)).join(',') : String(value)
+    return Array.isArray(value)
+      ? value.map((d) => (d instanceof Date ? d.toISOString() : String(d))).join(',')
+      : String(value)
   }
 
   return String(value)
@@ -1490,7 +1536,9 @@ function serializeValue(value: any, config: Config): string | undefined {
 let debugMessages: string[] = []
 
 // Main hook
-export function useQueryState<T extends Record<string, Config>>(schema: T): UseQueryStateReturnType<T> {
+export function useQueryState<T extends Record<string, Config>>(
+  schema: T,
+): UseQueryStateReturnType<T> {
   const [searchParams, setSearchParams] = useSearchParams()
 
   // Clear debug messages on each hook call
@@ -1499,7 +1547,10 @@ export function useQueryState<T extends Record<string, Config>>(schema: T): UseQ
   // Check if defaults need to be applied to URL on initial load
   const needsDefaultsApplied = Object.entries(schema).some(([key, config]) => {
     const arrayKey = key + '[]'
-    const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+    const isArrayType =
+      config.type === 'stringArray' ||
+      config.type === 'numberArray' ||
+      config.type === 'booleanArray'
     const hasArrayValue = isArrayType && searchParams.has(arrayKey)
     const hasRegularValue = searchParams.has(key)
     const hasValue = hasArrayValue || hasRegularValue
@@ -1528,7 +1579,10 @@ export function useQueryState<T extends Record<string, Config>>(schema: T): UseQ
 
       Object.entries(schema).forEach(([key, config]) => {
         const arrayKey = key + '[]'
-        const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+        const isArrayType =
+          config.type === 'stringArray' ||
+          config.type === 'numberArray' ||
+          config.type === 'booleanArray'
         const hasArrayValue = isArrayType && paramsWithDefaults.has(arrayKey)
         const hasRegularValue = paramsWithDefaults.has(key)
 
@@ -1538,7 +1592,10 @@ export function useQueryState<T extends Record<string, Config>>(schema: T): UseQ
             `DEBUG: setTimeout - Setting ${key} to default: ${defaultValue}`,
           )
           if (defaultValue !== undefined) {
-            const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+            const isArrayType =
+              config.type === 'stringArray' ||
+              config.type === 'numberArray' ||
+              config.type === 'booleanArray'
             if (isArrayType && Array.isArray(defaultValue)) {
               // For arrays, use param[] syntax - set multiple entries
               defaultValue.forEach((item) => {
@@ -1588,7 +1645,10 @@ export function useQueryState<T extends Record<string, Config>>(schema: T): UseQ
       } else {
         // Use current parsed value
         let rawValue: string | null
-        const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+        const isArrayType =
+          config.type === 'stringArray' ||
+          config.type === 'numberArray' ||
+          config.type === 'booleanArray'
         if (isArrayType) {
           // For arrays, use param[] syntax with URLSearchParams.getAll()
           const arrayKey = key + '[]'
@@ -1603,7 +1663,10 @@ export function useQueryState<T extends Record<string, Config>>(schema: T): UseQ
       // Validate the value before setting
       const validatedValue = validateValue(valueToUse, config)
 
-      const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+      const isArrayType =
+        config.type === 'stringArray' ||
+        config.type === 'numberArray' ||
+        config.type === 'booleanArray'
       if (isArrayType && Array.isArray(validatedValue)) {
         // For arrays, use param[] syntax - set multiple entries
         const arrayKey = key + '[]'
@@ -1625,7 +1688,10 @@ export function useQueryState<T extends Record<string, Config>>(schema: T): UseQ
   Object.entries(schema).forEach(([key, config]) => {
     // Get and parse current value
     let rawValue: string | null
-    const isArrayType = config.type === 'stringArray' || config.type === 'numberArray' || config.type === 'booleanArray'
+    const isArrayType =
+      config.type === 'stringArray' ||
+      config.type === 'numberArray' ||
+      config.type === 'booleanArray'
     if (isArrayType) {
       // For arrays, use param[] syntax with URLSearchParams.getAll()
       const arrayKey = key + '[]'
@@ -1654,12 +1720,12 @@ function getConfigValue<T>(obj: Config, key: string): T | undefined {
   if ('defaultValue' in obj || !('min' in obj && typeof obj.min === 'function')) {
     return (obj as any)[key]
   }
-  
+
   // For StringBuilder objects, check the _config property
   if ('_config' in obj && obj._config) {
     return (obj._config as any)[key]
   }
-  
+
   // For other builder objects, these properties aren't accessible - return undefined
   return undefined
 }
