@@ -576,15 +576,18 @@ export function string(): StringBuilder {
         _config: arrayConfig,
 
         min(length: number): StringArrayBuilder {
-          return createStringArrayBuilder({ ...arrayConfig, minLength: length })
+          const newConfig = { ...arrayConfig, minLength: length }
+          return createStringArrayBuilder(newConfig)
         },
 
         max(length: number): StringArrayBuilder {
-          return createStringArrayBuilder({ ...arrayConfig, maxLength: length })
+          const newConfig = { ...arrayConfig, maxLength: length }
+          return createStringArrayBuilder(newConfig)
         },
 
         default(value: string[]): StringArrayConfigWithDefault {
-          return { type: 'stringArray', ...arrayConfig, defaultValue: value }
+          const result = { type: 'stringArray' as const, ...arrayConfig, defaultValue: value }
+          return result
         },
       })
 
@@ -911,6 +914,17 @@ function parseValue(rawValue: string | null, config: Config): any {
   const defaultValue = getDefaultValue(config)
 
   if (rawValue === null) {
+    // Arrays always default to empty array if no explicit default
+    const isArrayType =
+      config.type === 'stringArray' ||
+      config.type === 'numberArray' ||
+      config.type === 'booleanArray' ||
+      config.type === 'dateArray'
+
+    if (isArrayType) {
+      return defaultValue !== undefined ? defaultValue : []
+    }
+
     return defaultValue
   }
 
@@ -1067,6 +1081,48 @@ function parseValue(rawValue: string | null, config: Config): any {
     // Parse comma-separated string into array
     const parsed = rawValue.split(',')
     let value = parsed
+      .map((item) => {
+        let stringValue = item
+
+        // Apply transformation constraints to each string
+        const isLowercase = getConfigValue(config, 'lowercase')
+        const isUppercase = getConfigValue(config, 'uppercase')
+
+        if (isLowercase) {
+          stringValue = stringValue.toLowerCase()
+        } else if (isUppercase) {
+          stringValue = stringValue.toUpperCase()
+        }
+
+        // Apply individual string length constraints
+        const stringMinLength = getConfigValue<number>(config, 'stringMinLength')
+        const stringMaxLength = getConfigValue<number>(config, 'stringMaxLength')
+
+        if (stringMinLength && stringValue.length < stringMinLength) {
+          return null // Mark for removal
+        }
+        if (stringMaxLength && stringValue.length > stringMaxLength) {
+          stringValue = stringValue.substring(0, stringMaxLength)
+        }
+
+        // Apply individual string validation constraints
+        const isEmail = getConfigValue(config, 'email')
+        const isUrl = getConfigValue(config, 'url')
+        const isUuid = getConfigValue(config, 'uuid')
+
+        if (isEmail && !isValidEmail(stringValue)) {
+          return null // Mark for removal
+        }
+        if (isUrl && !isValidUrl(stringValue)) {
+          return null // Mark for removal
+        }
+        if (isUuid && !isValidUuid(stringValue)) {
+          return null // Mark for removal
+        }
+
+        return stringValue
+      })
+      .filter((item) => item !== null) // Remove invalid strings
 
     // Apply array constraints
     const minLength = getMinLength(config)
@@ -1316,20 +1372,65 @@ function validateValue(value: any, config: Config): any {
 
   if (config.type === 'stringArray') {
     // String array validation
+    const currentDebug = (globalThis as any).queryStateDebug || []
+    currentDebug.push(`DEBUG: validateValue stringArray input: ${JSON.stringify(value)}`)
     const arrayValue = Array.isArray(value) ? value : [String(value)]
-    let validatedValue = arrayValue.map((item) => String(item))
+    let validatedValue = arrayValue
+      .map((item) => {
+        let stringValue = String(item)
+
+        // Apply transformation constraints to each string
+        const isLowercase = getConfigValue(config, 'lowercase')
+        const isUppercase = getConfigValue(config, 'uppercase')
+
+        if (isLowercase) {
+          stringValue = stringValue.toLowerCase()
+        } else if (isUppercase) {
+          stringValue = stringValue.toUpperCase()
+        }
+
+        // Apply individual string length constraints
+        const stringMinLength = getConfigValue<number>(config, 'stringMinLength')
+        const stringMaxLength = getConfigValue<number>(config, 'stringMaxLength')
+
+        if (stringMinLength && stringValue.length < stringMinLength) {
+          return null // Mark for removal
+        }
+        if (stringMaxLength && stringValue.length > stringMaxLength) {
+          stringValue = stringValue.substring(0, stringMaxLength)
+        }
+
+        // Apply individual string validation constraints
+        const isEmail = getConfigValue(config, 'email')
+        const isUrl = getConfigValue(config, 'url')
+        const isUuid = getConfigValue(config, 'uuid')
+
+        if (isEmail && !isValidEmail(stringValue)) {
+          return null // Mark for removal
+        }
+        if (isUrl && !isValidUrl(stringValue)) {
+          return null // Mark for removal
+        }
+        if (isUuid && !isValidUuid(stringValue)) {
+          return null // Mark for removal
+        }
+
+        return stringValue
+      })
+      .filter((item) => item !== null) // Remove invalid strings
 
     // Apply array constraints
     const minLength = getMinLength(config)
     const maxLength = getMaxLength(config)
 
     if (minLength && validatedValue.length < minLength) {
+      currentDebug.push(`DEBUG: Array too short, returning default`)
+      ;(globalThis as any).queryStateDebug = currentDebug
       return defaultValue
     }
     if (maxLength && validatedValue.length > maxLength) {
       validatedValue = validatedValue.slice(0, maxLength)
     }
-
     return validatedValue
   }
 
@@ -1517,6 +1618,23 @@ function serializeValue(value: any, config: Config): string | undefined {
     return Array.isArray(value) ? value.join(',') : String(value)
   }
 
+  if (config.type === 'numberArray') {
+    // Serialize number array as comma-separated string
+    return Array.isArray(value) ? value.map((v) => String(v)).join(',') : String(value)
+  }
+
+  if (config.type === 'booleanArray') {
+    // Serialize boolean array as comma-separated string
+    return Array.isArray(value) ? value.map((v) => String(v)).join(',') : String(value)
+  }
+
+  if (config.type === 'dateArray') {
+    // Serialize date array as comma-separated ISO strings
+    return Array.isArray(value)
+      ? value.map((d) => (d instanceof Date ? d.toISOString() : String(d))).join(',')
+      : String(value)
+  }
+
   if (config.type === 'stringTuple2') {
     // Serialize tuple as comma-separated string
     return Array.isArray(value) ? value.join(',') : String(value)
@@ -1550,13 +1668,14 @@ export function useQueryState<T extends Record<string, Config>>(
     const isArrayType =
       config.type === 'stringArray' ||
       config.type === 'numberArray' ||
-      config.type === 'booleanArray'
+      config.type === 'booleanArray' ||
+      config.type === 'dateArray'
     const hasArrayValue = isArrayType && searchParams.has(arrayKey)
     const hasRegularValue = searchParams.has(key)
     const hasValue = hasArrayValue || hasRegularValue
     const hasDefault = getDefaultValue(config) !== undefined
     debugMessages.push(
-      `DEBUG: ${key} - hasValue: ${hasValue}, hasDefault: ${hasDefault}, getDefaultValue: ${getDefaultValue(config)}`,
+      `DEBUG: ${key} - isArrayType: ${isArrayType}, hasArrayValue: ${hasArrayValue}, hasRegularValue: ${hasRegularValue}, hasValue: ${hasValue}, hasDefault: ${hasDefault}, defaultValue: ${JSON.stringify(getDefaultValue(config))}`,
     )
     return !hasValue && hasDefault
   })
@@ -1582,28 +1701,33 @@ export function useQueryState<T extends Record<string, Config>>(
         const isArrayType =
           config.type === 'stringArray' ||
           config.type === 'numberArray' ||
-          config.type === 'booleanArray'
+          config.type === 'booleanArray' ||
+          config.type === 'dateArray'
         const hasArrayValue = isArrayType && paramsWithDefaults.has(arrayKey)
         const hasRegularValue = paramsWithDefaults.has(key)
 
         if (!hasArrayValue && !hasRegularValue) {
           const defaultValue = getDefaultValue(config)
           timeoutDebugMessages.push(
-            `DEBUG: setTimeout - Setting ${key} to default: ${defaultValue}`,
+            `DEBUG: setTimeout - Setting ${key} to default: ${JSON.stringify(defaultValue)}`,
           )
           if (defaultValue !== undefined) {
             const isArrayType =
               config.type === 'stringArray' ||
               config.type === 'numberArray' ||
-              config.type === 'booleanArray'
+              config.type === 'booleanArray' ||
+              config.type === 'dateArray'
             if (isArrayType && Array.isArray(defaultValue)) {
-              // For arrays, use param[] syntax - set multiple entries
-              defaultValue.forEach((item) => {
-                paramsWithDefaults.append(arrayKey, String(item))
-              })
-              timeoutDebugMessages.push(
-                `DEBUG: setTimeout - Set array ${arrayKey} with ${defaultValue.length} items`,
-              )
+              // For arrays with non-empty defaults, use param[] syntax - set multiple entries
+              // Empty array defaults don't appear in URL (clean URLs)
+              if (defaultValue.length > 0) {
+                defaultValue.forEach((item) => {
+                  paramsWithDefaults.append(arrayKey, String(item))
+                })
+                timeoutDebugMessages.push(
+                  `DEBUG: setTimeout - Set array ${arrayKey} with ${defaultValue.length} items`,
+                )
+              }
             } else {
               const serialized = serializeValue(defaultValue, config)
               timeoutDebugMessages.push(`DEBUG: setTimeout - Serialized ${key}: ${serialized}`)
@@ -1640,20 +1764,26 @@ export function useQueryState<T extends Record<string, Config>>(
       let valueToUse: any
 
       if (key === updatedKey) {
-        // Use the new value being set
-        valueToUse = updatedValue
+        // Use the new value being set, but validate it first
+        valueToUse = validateValue(updatedValue, config)
       } else {
         // Use current parsed value
         let rawValue: string | null
         const isArrayType =
           config.type === 'stringArray' ||
           config.type === 'numberArray' ||
-          config.type === 'booleanArray'
+          config.type === 'booleanArray' ||
+          config.type === 'dateArray'
         if (isArrayType) {
           // For arrays, use param[] syntax with URLSearchParams.getAll()
           const arrayKey = key + '[]'
           const arrayValues = searchParams.getAll(arrayKey)
-          rawValue = arrayValues.length > 0 ? arrayValues.join(',') : null
+          if (arrayValues.length === 0) {
+            rawValue = null
+          } else {
+            // Join all values, even if empty
+            rawValue = arrayValues.join(',')
+          }
         } else {
           rawValue = searchParams.get(key)
         }
@@ -1666,13 +1796,17 @@ export function useQueryState<T extends Record<string, Config>>(
       const isArrayType =
         config.type === 'stringArray' ||
         config.type === 'numberArray' ||
-        config.type === 'booleanArray'
+        config.type === 'booleanArray' ||
+        config.type === 'dateArray'
       if (isArrayType && Array.isArray(validatedValue)) {
         // For arrays, use param[] syntax - set multiple entries
         const arrayKey = key + '[]'
-        validatedValue.forEach((item) => {
-          newParams.append(arrayKey, String(item))
-        })
+        // Empty arrays don't appear in URL (clean URLs)
+        if (validatedValue.length > 0) {
+          validatedValue.forEach((item) => {
+            newParams.append(arrayKey, String(item))
+          })
+        }
       } else {
         const serialized = serializeValue(validatedValue, config)
         if (serialized !== undefined) {
@@ -1691,12 +1825,18 @@ export function useQueryState<T extends Record<string, Config>>(
     const isArrayType =
       config.type === 'stringArray' ||
       config.type === 'numberArray' ||
-      config.type === 'booleanArray'
+      config.type === 'booleanArray' ||
+      config.type === 'dateArray'
     if (isArrayType) {
       // For arrays, use param[] syntax with URLSearchParams.getAll()
       const arrayKey = key + '[]'
       const arrayValues = searchParams.getAll(arrayKey)
-      rawValue = arrayValues.length > 0 ? arrayValues.join(',') : null
+      if (arrayValues.length === 0) {
+        rawValue = null
+      } else {
+        // Join all values, even if empty
+        rawValue = arrayValues.join(',')
+      }
     } else {
       rawValue = searchParams.get(key)
     }
@@ -1706,6 +1846,11 @@ export function useQueryState<T extends Record<string, Config>>(
     // Create setter
     const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1)
     result[`set${capitalizedKey}`] = (newValue: any) => {
+      const currentDebug = (globalThis as any).queryStateDebug || []
+      currentDebug.push(
+        `DEBUG: Setter function called for ${key} with: ${JSON.stringify(newValue)}`,
+      )
+      ;(globalThis as any).queryStateDebug = currentDebug
       const newParams = rebuildURL(key, newValue)
       setSearchParams(newParams)
     }
