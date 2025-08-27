@@ -389,27 +389,27 @@ type InferConfigType<T extends Config> = T extends StringConfigWithDefault
                         : T extends StringArrayConfigWithDefault
                           ? string[]
                           : T extends StringArrayConfig
-                            ? string[] | undefined
+                            ? string[]
                             : T extends StringArrayBuilder
-                              ? string[] | undefined
+                              ? string[]
                               : T extends NumberArrayConfigWithDefault
                                 ? number[]
                                 : T extends NumberArrayConfig
-                                  ? number[] | undefined
+                                  ? number[]
                                   : T extends NumberArrayBuilder
-                                    ? number[] | undefined
+                                    ? number[]
                                     : T extends BooleanArrayConfigWithDefault
                                       ? boolean[]
                                       : T extends BooleanArrayConfig
-                                        ? boolean[] | undefined
+                                        ? boolean[]
                                         : T extends BooleanArrayBuilder
-                                          ? boolean[] | undefined
+                                          ? boolean[]
                                           : T extends DateArrayConfigWithDefault
                                             ? Date[]
                                             : T extends DateArrayConfig
-                                              ? Date[] | undefined
+                                              ? Date[]
                                               : T extends DateArrayBuilder
-                                                ? Date[] | undefined
+                                                ? Date[]
                                                 : T extends StringTuple2ConfigWithDefault
                                                   ? [string, string]
                                                   : T extends StringTuple2Config
