@@ -357,6 +357,8 @@ export type Config =
   | BooleanArrayBuilder
   | DateArrayBuilder
   | StringTuple2Builder
+  | NumberTuple2Builder
+  | BooleanTuple2Builder
   | DateTuple2Builder
 
 // Type helper to infer the value type from a config
@@ -418,17 +420,21 @@ type InferConfigType<T extends Config> = T extends StringConfigWithDefault
                                                         ? [number, number]
                                                         : T extends NumberTuple2Config
                                                           ? [number, number] | undefined
-                                                          : T extends BooleanTuple2ConfigWithDefault
-                                                            ? [boolean, boolean]
-                                                            : T extends BooleanTuple2Config
-                                                              ? [boolean, boolean] | undefined
-                                                              : T extends DateTuple2ConfigWithDefault
-                                                                ? [Date, Date]
-                                                                : T extends DateTuple2Config
-                                                                  ? [Date, Date] | undefined
-                                                                  : T extends DateTuple2Builder
-                                                                    ? [Date, Date] | undefined
-                                                                    : never
+                                                          : T extends NumberTuple2Builder
+                                                            ? [number, number] | undefined
+                                                            : T extends BooleanTuple2ConfigWithDefault
+                                                              ? [boolean, boolean]
+                                                              : T extends BooleanTuple2Config
+                                                                ? [boolean, boolean] | undefined
+                                                                : T extends BooleanTuple2Builder
+                                                                  ? [boolean, boolean] | undefined
+                                                                  : T extends DateTuple2ConfigWithDefault
+                                                                    ? [Date, Date]
+                                                                    : T extends DateTuple2Config
+                                                                      ? [Date, Date] | undefined
+                                                                      : T extends DateTuple2Builder
+                                                                        ? [Date, Date] | undefined
+                                                                        : never
 
 // Type helper to create setter function type - always accepts undefined for clearing
 type SetterType<T> = (value: T | undefined) => void
@@ -469,6 +475,7 @@ export interface NumberBuilder {
   min(value: number): NumberBuilder
   max(value: number): NumberBuilder
   array(): NumberArrayBuilder
+  tuple(length: number): NumberTuple2Builder
   default(value: number): NumberConfigWithDefault
 }
 
@@ -476,6 +483,7 @@ export interface BooleanBuilder {
   type: 'boolean'
   _config: Partial<BooleanConfig>
   array(): BooleanArrayBuilder
+  tuple(length: number): BooleanTuple2Builder
   default(value: boolean): BooleanConfigWithDefault
 }
 
@@ -501,6 +509,18 @@ export interface StringTuple2Builder {
   type: 'stringTuple2'
   _config: Partial<StringTuple2Config>
   default(value: [string, string]): StringTuple2ConfigWithDefault
+}
+
+export interface NumberTuple2Builder {
+  type: 'numberTuple2'
+  _config: Partial<NumberTuple2Config>
+  default(value: [number, number]): NumberTuple2ConfigWithDefault
+}
+
+export interface BooleanTuple2Builder {
+  type: 'booleanTuple2'
+  _config: Partial<BooleanTuple2Config>
+  default(value: [boolean, boolean]): BooleanTuple2ConfigWithDefault
 }
 
 export interface DateBuilder {
@@ -689,6 +709,27 @@ export function number(): NumberBuilder {
       })
     },
 
+    tuple(length: number): NumberTuple2Builder {
+      if (length !== 2) {
+        throw new Error('Only tuple(2) is currently supported')
+      }
+
+      const createNumberTuple2Builder = (
+        tupleConfig: Partial<NumberTuple2Config> = {},
+      ): NumberTuple2Builder => ({
+        type: 'numberTuple2',
+        _config: tupleConfig,
+        default(value: [number, number]): NumberTuple2ConfigWithDefault {
+          return { type: 'numberTuple2', ...tupleConfig, defaultValue: value }
+        },
+      })
+
+      return createNumberTuple2Builder({
+        min: config.min,
+        max: config.max,
+      })
+    },
+
     default(value: number): NumberConfigWithDefault {
       return { type: 'number', ...config, defaultValue: value }
     },
@@ -727,6 +768,26 @@ export function boolean(): BooleanBuilder {
       return createBooleanArrayBuilder({
         // Booleans don't have constraints to copy over (like min/max values)
         // Just create a clean boolean array builder
+      })
+    },
+
+    tuple(length: number): BooleanTuple2Builder {
+      if (length !== 2) {
+        throw new Error('Only tuple(2) is currently supported')
+      }
+
+      const createBooleanTuple2Builder = (
+        tupleConfig: Partial<BooleanTuple2Config> = {},
+      ): BooleanTuple2Builder => ({
+        type: 'booleanTuple2',
+        _config: tupleConfig,
+        default(value: [boolean, boolean]): BooleanTuple2ConfigWithDefault {
+          return { type: 'booleanTuple2', ...tupleConfig, defaultValue: value }
+        },
+      })
+
+      return createBooleanTuple2Builder({
+        // Booleans don't have constraints to copy over
       })
     },
 
@@ -1253,6 +1314,65 @@ function parseValue(rawValue: string | null, config: Config): any {
     return processedTuple as [string, string]
   }
 
+  if (config.type === 'numberTuple2') {
+    // Parse comma-separated string into tuple of exactly 2 numbers
+    const parsed = rawValue.split(',')
+
+    // Must have exactly 2 items
+    if (parsed.length !== 2) {
+      return defaultValue
+    }
+
+    // Parse each number
+    const processedTuple = parsed.map((item) => {
+      const num = parseFloat(item)
+
+      if (isNaN(num)) {
+        return null // Invalid number
+      }
+
+      let value = num
+
+      // Apply number constraints
+      const min = getMin(config)
+      const max = getMax(config)
+
+      if (min !== undefined && value < min) {
+        value = min
+      }
+      if (max !== undefined && value > max) {
+        value = max
+      }
+
+      return value
+    })
+
+    // If any number is invalid, return default
+    if (processedTuple.some((item) => item === null)) {
+      return defaultValue
+    }
+
+    return processedTuple as [number, number]
+  }
+
+  if (config.type === 'booleanTuple2') {
+    // Parse comma-separated string into tuple of exactly 2 booleans
+    const parsed = rawValue.split(',')
+
+    // Must have exactly 2 items
+    if (parsed.length !== 2) {
+      return defaultValue
+    }
+
+    // Parse each boolean
+    const processedTuple = parsed.map((item) => {
+      const lowerValue = item.toLowerCase().trim()
+      return lowerValue === 'true' || lowerValue === '1' || lowerValue === 'yes'
+    })
+
+    return processedTuple as [boolean, boolean]
+  }
+
   return rawValue
 }
 
@@ -1544,6 +1664,55 @@ function validateValue(value: any, config: Config): any {
     return processedTuple as [string, string]
   }
 
+  if (config.type === 'numberTuple2') {
+    // Number tuple validation
+    if (!Array.isArray(value) || value.length !== 2) {
+      return defaultValue
+    }
+
+    // Convert to numbers and validate
+    const processedTuple = value.map((item) => {
+      const numValue = typeof item === 'number' ? item : parseFloat(String(item))
+      if (isNaN(numValue)) {
+        return null // Invalid number
+      }
+
+      let validatedValue = numValue
+
+      // Apply number constraints
+      const min = getMin(config)
+      const max = getMax(config)
+
+      if (min !== undefined && validatedValue < min) {
+        validatedValue = min
+      }
+      if (max !== undefined && validatedValue > max) {
+        validatedValue = max
+      }
+
+      return validatedValue
+    })
+
+    // If any number is invalid, return default
+    if (processedTuple.some((item) => item === null)) {
+      return defaultValue
+    }
+
+    return processedTuple as [number, number]
+  }
+
+  if (config.type === 'booleanTuple2') {
+    // Boolean tuple validation
+    if (!Array.isArray(value) || value.length !== 2) {
+      return defaultValue
+    }
+
+    // Convert to booleans
+    const processedTuple = value.map((item) => Boolean(item))
+
+    return processedTuple as [boolean, boolean]
+  }
+
   if (config.type === 'dateTuple2') {
     // Date tuple validation
     if (!Array.isArray(value) || value.length !== 2) {
@@ -1638,6 +1807,16 @@ function serializeValue(value: any, config: Config): string | undefined {
   if (config.type === 'stringTuple2') {
     // Serialize tuple as comma-separated string
     return Array.isArray(value) ? value.join(',') : String(value)
+  }
+
+  if (config.type === 'numberTuple2') {
+    // Serialize number tuple as comma-separated string
+    return Array.isArray(value) ? value.map((v) => String(v)).join(',') : String(value)
+  }
+
+  if (config.type === 'booleanTuple2') {
+    // Serialize boolean tuple as comma-separated string
+    return Array.isArray(value) ? value.map((v) => String(v)).join(',') : String(value)
   }
 
   if (config.type === 'dateTuple2') {

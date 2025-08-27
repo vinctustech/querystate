@@ -1,24 +1,6 @@
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
 import { SectionContent } from './SectionContent'
 
-type Section =
-  | 'string-basic'
-  | 'string-constraints'
-  | 'string-transformations'
-  | 'string-validations'
-  | 'number-basic'
-  | 'boolean-basic'
-  | 'array-string'
-  | 'array-number'
-  | 'array-boolean'
-  | 'array-date'
-  | 'tuple-string'
-  | 'tuple-number'
-  | 'tuple-boolean'
-  | 'tuple-date'
-  | 'date-basic'
-  | 'antd-integration'
-
 const sections = [
   { id: 'string-basic', name: 'String - Basic', path: '/string-basic' },
   { id: 'string-constraints', name: 'String - Constraints', path: '/string-constraints' },
