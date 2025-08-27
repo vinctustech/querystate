@@ -1254,6 +1254,57 @@ function parseValue(rawValue: string | null, config: Config): any {
     return value
   }
 
+  if (config.type === 'dateArray') {
+    // Parse comma-separated string into date array
+    const parsed = rawValue.split(',')
+
+    // Parse each date
+    let value = parsed
+      .map((item) => {
+        const date = new Date(item)
+
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+          return null // Mark for removal
+        }
+
+        // Apply date constraints
+        const min = getConfigValue(config, 'min')
+        const max = getConfigValue(config, 'max')
+        const future = getConfigValue(config, 'future')
+        const past = getConfigValue(config, 'past')
+
+        if (min && date < min) {
+          return null // Mark for removal
+        }
+        if (max && date > max) {
+          return null // Mark for removal
+        }
+        if (future && date <= new Date()) {
+          return null // Mark for removal
+        }
+        if (past && date >= new Date()) {
+          return null // Mark for removal
+        }
+
+        return date
+      })
+      .filter((date) => date !== null) // Remove invalid dates
+
+    // Apply array constraints
+    const minLength = getMinLength(config)
+    const maxLength = getMaxLength(config)
+
+    if (minLength && value.length < minLength) {
+      return defaultValue
+    }
+    if (maxLength && value.length > maxLength) {
+      value = value.slice(0, maxLength)
+    }
+
+    return value
+  }
+
   if (config.type === 'stringTuple2') {
     // Parse comma-separated string into tuple of exactly 2 strings
     const parsed = rawValue.split(',')
@@ -1592,6 +1643,63 @@ function validateValue(value: any, config: Config): any {
     // Boolean array validation
     const arrayValue = Array.isArray(value) ? value : [value]
     let validatedValue = arrayValue.map((item) => Boolean(item))
+
+    // Apply array constraints
+    const minLength = getMinLength(config)
+    const maxLength = getMaxLength(config)
+
+    if (minLength && validatedValue.length < minLength) {
+      return defaultValue
+    }
+    if (maxLength && validatedValue.length > maxLength) {
+      validatedValue = validatedValue.slice(0, maxLength)
+    }
+
+    return validatedValue
+  }
+
+  if (config.type === 'dateArray') {
+    // Date array validation
+    const arrayValue = Array.isArray(value) ? value : [value]
+
+    // Convert to dates and validate
+    let validatedValue = arrayValue
+      .map((item) => {
+        let dateValue: Date
+
+        if (item instanceof Date) {
+          dateValue = item
+        } else {
+          dateValue = new Date(String(item))
+        }
+
+        // Check if date is valid
+        if (isNaN(dateValue.getTime())) {
+          return null // Mark for removal
+        }
+
+        // Apply date constraints
+        const min = getConfigValue(config, 'min')
+        const max = getConfigValue(config, 'max')
+        const future = getConfigValue(config, 'future')
+        const past = getConfigValue(config, 'past')
+
+        if (min && dateValue < min) {
+          return null // Mark for removal
+        }
+        if (max && dateValue > max) {
+          return null // Mark for removal
+        }
+        if (future && dateValue <= new Date()) {
+          return null // Mark for removal
+        }
+        if (past && dateValue >= new Date()) {
+          return null // Mark for removal
+        }
+
+        return dateValue
+      })
+      .filter((date) => date !== null) // Remove invalid dates
 
     // Apply array constraints
     const minLength = getMinLength(config)
