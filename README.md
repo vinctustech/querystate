@@ -6,7 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-16.8%2B-blue)](https://reactjs.org/)
 
-A lightweight, type-safe React library for managing URL query parameters as application state, with support for strings, numbers, booleans, dates, arrays, and fixed-length tuples.
+A lightweight, type-safe React library for managing URL query parameters as application state, with support for strings, numbers, booleans, dates, enums, arrays, and fixed-length tuples.
 
 ## Features
 
@@ -15,6 +15,7 @@ A lightweight, type-safe React library for managing URL query parameters as appl
 - **Chainable Configuration** - Fluent API for defining parameter types with defaults
 - **Array Support** - First-class handling of multi-select components and array parameters
 - **Number Values** - Native support for numeric parameters with proper type conversion
+- **Enum Support** - Type-safe enum parameters with runtime validation and exact union types
 - **Tuple Support** - Fixed-length arrays that maintain their structure (perfect for sliders, coordinates, colors)
 - **Default Values** - Optional defaults that automatically populate the URL when parameters are missing
 - **React Router Integration** - Built on React Router's useSearchParams for seamless compatibility
@@ -35,6 +36,7 @@ import { Select, InputNumber, Slider, Switch, DatePicker } from 'antd';
 function FilterComponent() {
   const {
     category, setCategory,        // String parameter (string | undefined)
+    status, setStatus,            // Enum parameter ('pending' | 'active' | 'completed' | undefined)
     tags, setTags,                // String array (string[])
     page, setPage,                // Number parameter with default (number - never undefined)
     priceRange, setPriceRange,    // Number tuple with default ([number, number] - never undefined)
@@ -42,6 +44,7 @@ function FilterComponent() {
     startDate, setStartDate        // Date parameter (Date | undefined)
   } = useQueryState({
     category: queryState.string(),
+    status: queryState.string().enum(['pending', 'active', 'completed']),
     tags: queryState.string().array(),
     page: queryState.number().default(1),
     priceRange: queryState.number().tuple(2).default([0, 100]),
@@ -58,6 +61,17 @@ function FilterComponent() {
                     options={[
                       { value: 'electronics', label: 'Electronics' },
                       { value: 'books', label: 'Books' }
+                    ]}
+            />
+
+            <Select
+                    placeholder="Select status"
+                    value={status}  // May be undefined if not in URL
+                    onChange={setStatus}
+                    options={[
+                      { value: 'pending', label: 'Pending' },
+                      { value: 'active', label: 'Active' },
+                      { value: 'completed', label: 'Completed' }
                     ]}
             />
 
@@ -118,6 +132,25 @@ const { status, setStatus } = useQueryState({
   status: queryState.string().default('active')
 });
 // status: string
+```
+
+### Enum Parameters
+
+```tsx
+// Without default: exact union type | undefined
+const { status, setStatus } = useQueryState({
+  status: queryState.string().enum(['pending', 'active', 'completed'])
+});
+// status: 'pending' | 'active' | 'completed' | undefined
+
+// With default: exact union type (never undefined)
+const { granularity, setGranularity } = useQueryState({
+  granularity: queryState.string().enum(['day', 'week', 'month']).default('day')
+});
+// granularity: 'day' | 'week' | 'month'
+
+// Runtime validation - invalid values are rejected
+setStatus('invalid'); // Will remain undefined or revert to default
 ```
 
 ### Array Parameters
@@ -323,6 +356,7 @@ setPriceRange(newRange);
 QueryState maintains proper URL formatting:
 
 - Single string: `?category=electronics`
+- Single enum: `?status=active`
 - Single number: `?page=3`
 - String array: `?tags=new&tags=sale`
 - Number array: `?scores=85&scores=92&scores=78`

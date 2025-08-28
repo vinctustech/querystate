@@ -1,9 +1,11 @@
 import { qs, useQueryState } from '@vinctus/querystate'
 
 export function StringArray() {
-  const { categories, setCategories, tags, setTags } = useQueryState({
+  const { categories, setCategories, tags, setTags, priority, setPriority, sizes, setSizes } = useQueryState({
     categories: qs.string().array(),
     tags: qs.string().array().default(['react', 'typescript']),
+    priority: qs.string().enum(['low', 'medium', 'high'] as const).default('medium'),
+    sizes: qs.string().array().default(['small', 'medium']),
   })
 
   const buttonStyle = {
@@ -92,6 +94,63 @@ export function StringArray() {
         </button>
       </div>
 
+      <div style={{ marginBottom: '30px' }}>
+        <h3>String enum (demonstrates enum validation in array context)</h3>
+        <p>Priority: {displayValue(priority)}</p>
+        <p>
+          Type: <code>{typeof priority}</code>
+        </p>
+
+        <button style={buttonStyle} onClick={() => setPriority('low')}>
+          Set 'low'
+        </button>
+        <button style={buttonStyle} onClick={() => setPriority('medium')}>
+          Set 'medium'
+        </button>
+        <button style={buttonStyle} onClick={() => setPriority('high')}>
+          Set 'high'
+        </button>
+        <button style={buttonStyle} onClick={() => setPriority('invalid' as any)}>
+          Set 'invalid' (should revert to default)
+        </button>
+        <button style={buttonStyle} onClick={() => setPriority(undefined)}>
+          Clear (should revert to default)
+        </button>
+      </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <h3>String array with possible enum values (manual validation)</h3>
+        <p>Sizes: {displayValue(sizes)}</p>
+        <p>
+          Type: <code>{typeof sizes}</code>, Array: <code>{Array.isArray(sizes).toString()}</code>
+        </p>
+        <p>
+          Length: <code>{Array.isArray(sizes) ? sizes.length : 'N/A'}</code>
+        </p>
+        <p>
+          Join: <code>"{sizes.join(', ')}"</code>
+        </p>
+
+        <button style={buttonStyle} onClick={() => setSizes(['small', 'large'])}>
+          Set ['small', 'large']
+        </button>
+        <button style={buttonStyle} onClick={() => setSizes(['medium'])}>
+          Set ['medium']
+        </button>
+        <button style={buttonStyle} onClick={() => setSizes(['small', 'medium', 'large'])}>
+          Set ['small', 'medium', 'large']
+        </button>
+        <button style={buttonStyle} onClick={() => setSizes(['invalid', 'small'])}>
+          Set ['invalid', 'small'] (no validation on arrays)
+        </button>
+        <button style={buttonStyle} onClick={() => setSizes([])}>
+          Set empty array []
+        </button>
+        <button style={buttonStyle} onClick={() => setSizes(undefined)}>
+          Clear (should revert to default)
+        </button>
+      </div>
+
       <div
         style={{
           marginTop: '30px',
@@ -110,6 +169,15 @@ export function StringArray() {
         </p>
         <p>
           <strong>tags:</strong> {typeof tags}, isArray: {Array.isArray(tags).toString()}
+        </p>
+        <p>
+          <strong>Expected:</strong> string[] (never undefined due to default)
+        </p>
+        <p>
+          <strong>priority:</strong> {typeof priority} (should be 'low' | 'medium' | 'high', never undefined due to default)
+        </p>
+        <p>
+          <strong>sizes:</strong> {typeof sizes}, isArray: {Array.isArray(sizes).toString()}
         </p>
         <p>
           <strong>Expected:</strong> string[] (never undefined due to default)

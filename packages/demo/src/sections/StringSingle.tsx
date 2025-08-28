@@ -1,9 +1,11 @@
 import { qs, useQueryState } from '@vinctus/querystate'
 
 export function StringSingle() {
-  const { category, setCategory, name, setName } = useQueryState({
+  const { category, setCategory, name, setName, granularity, setGranularity, status, setStatus } = useQueryState({
     category: qs.string(),
     name: qs.string().default('John'),
+    granularity: qs.string().enum(['day', 'week', 'month'] as const).default('day'),
+    status: qs.string().enum(['pending', 'active', 'completed'] as const),
   })
 
   const buttonStyle = {
@@ -74,6 +76,52 @@ export function StringSingle() {
         </button>
       </div>
 
+      <div style={{ marginBottom: '30px' }}>
+        <h3>String enum with default value</h3>
+        <p>Granularity: {displayValue(granularity)}</p>
+        <p>
+          Type: <code>{typeof granularity}</code>
+        </p>
+        <button style={buttonStyle} onClick={() => setGranularity('day')}>
+          Set 'day'
+        </button>
+        <button style={buttonStyle} onClick={() => setGranularity('week')}>
+          Set 'week'
+        </button>
+        <button style={buttonStyle} onClick={() => setGranularity('month')}>
+          Set 'month'
+        </button>
+        <button style={buttonStyle} onClick={() => setGranularity('invalid' as any)}>
+          Set 'invalid' (should revert to default)
+        </button>
+        <button style={buttonStyle} onClick={() => setGranularity(undefined)}>
+          Clear (should revert to default)
+        </button>
+      </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <h3>String enum without default</h3>
+        <p>Status: {displayValue(status)}</p>
+        <p>
+          Type: <code>{typeof status}</code>
+        </p>
+        <button style={buttonStyle} onClick={() => setStatus('pending')}>
+          Set 'pending'
+        </button>
+        <button style={buttonStyle} onClick={() => setStatus('active')}>
+          Set 'active'
+        </button>
+        <button style={buttonStyle} onClick={() => setStatus('completed')}>
+          Set 'completed'
+        </button>
+        <button style={buttonStyle} onClick={() => setStatus('invalid' as any)}>
+          Set 'invalid' (should become undefined)
+        </button>
+        <button style={buttonStyle} onClick={() => setStatus(undefined)}>
+          Clear (undefined)
+        </button>
+      </div>
+
       <div
         style={{
           marginTop: '30px',
@@ -88,6 +136,12 @@ export function StringSingle() {
         </p>
         <p>
           <strong>name:</strong> {typeof name} (should be string, never undefined due to default)
+        </p>
+        <p>
+          <strong>granularity:</strong> {typeof granularity} (should be 'day' | 'week' | 'month', never undefined due to default)
+        </p>
+        <p>
+          <strong>status:</strong> {typeof status} (should be 'pending' | 'active' | 'completed' | undefined)
         </p>
         <p>
           <strong>URL params:</strong> {window.location.search || '(none)'}
