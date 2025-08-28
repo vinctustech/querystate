@@ -80,6 +80,17 @@ export interface StringConfigWithDefault {
   uuid?: boolean
 }
 
+export interface StringEnumConfig<T extends string = string> {
+  type: 'stringEnum'
+  allowedValues: readonly T[]
+}
+
+export interface StringEnumConfigWithDefault<T extends string = string> {
+  type: 'stringEnum'
+  defaultValue: T
+  allowedValues: readonly T[]
+}
+
 export interface NumberConfigWithDefault {
   type: 'number'
   defaultValue: number
@@ -328,6 +339,9 @@ export type Config =
   | NumberArrayConfigWithDefault
   | BooleanArrayConfigWithDefault
   | DateArrayConfigWithDefault
+  | StringEnumConfig
+  | StringEnumConfigWithDefault
+  | StringEnumBuilder<any>
   | StringTuple2Config
   | StringTuple3Config
   | StringTuple4Config
@@ -360,81 +374,88 @@ export type Config =
   | NumberTuple2Builder
   | BooleanTuple2Builder
   | DateTuple2Builder
+  | StringEnumBuilder
 
 // Type helper to infer the value type from a config
-type InferConfigType<T extends Config> = T extends StringConfigWithDefault
-  ? string
-  : T extends StringConfig
-    ? string | undefined
-    : T extends StringBuilder
-      ? string | undefined
-      : T extends NumberConfigWithDefault
-        ? number
-        : T extends NumberConfig
-          ? number | undefined
-          : T extends NumberBuilder
-            ? number | undefined
-            : T extends BooleanConfigWithDefault
-              ? boolean
-              : T extends BooleanConfig
-                ? boolean | undefined
-                : T extends BooleanBuilder
-                  ? boolean | undefined
-                  : T extends DateConfigWithDefault
-                    ? Date
-                    : T extends DateConfig
-                      ? Date | undefined
-                      : T extends DateBuilder
-                        ? Date | undefined
-                        : T extends StringArrayConfigWithDefault
-                          ? string[]
-                          : T extends StringArrayConfig
-                            ? string[]
-                            : T extends StringArrayBuilder
-                              ? string[]
-                              : T extends NumberArrayConfigWithDefault
-                                ? number[]
-                                : T extends NumberArrayConfig
-                                  ? number[]
-                                  : T extends NumberArrayBuilder
-                                    ? number[]
-                                    : T extends BooleanArrayConfigWithDefault
-                                      ? boolean[]
-                                      : T extends BooleanArrayConfig
-                                        ? boolean[]
-                                        : T extends BooleanArrayBuilder
-                                          ? boolean[]
-                                          : T extends DateArrayConfigWithDefault
-                                            ? Date[]
-                                            : T extends DateArrayConfig
-                                              ? Date[]
-                                              : T extends DateArrayBuilder
-                                                ? Date[]
-                                                : T extends StringTuple2ConfigWithDefault
-                                                  ? [string, string]
-                                                  : T extends StringTuple2Config
-                                                    ? [string, string] | undefined
-                                                    : T extends StringTuple2Builder
-                                                      ? [string, string] | undefined
-                                                      : T extends NumberTuple2ConfigWithDefault
-                                                        ? [number, number]
-                                                        : T extends NumberTuple2Config
-                                                          ? [number, number] | undefined
-                                                          : T extends NumberTuple2Builder
-                                                            ? [number, number] | undefined
-                                                            : T extends BooleanTuple2ConfigWithDefault
-                                                              ? [boolean, boolean]
-                                                              : T extends BooleanTuple2Config
-                                                                ? [boolean, boolean] | undefined
-                                                                : T extends BooleanTuple2Builder
-                                                                  ? [boolean, boolean] | undefined
-                                                                  : T extends DateTuple2ConfigWithDefault
-                                                                    ? [Date, Date]
-                                                                    : T extends DateTuple2Config
-                                                                      ? [Date, Date] | undefined
-                                                                      : T extends DateTuple2Builder
-                                                                        ? [Date, Date] | undefined
-                                                                        : never
+type InferConfigType<T extends Config> = T extends StringEnumConfigWithDefault<infer U>
+  ? U
+  : T extends StringEnumConfig<infer U>
+    ? U | undefined
+    : T extends StringEnumBuilder<infer U>
+      ? U | undefined
+      : T extends StringConfigWithDefault
+        ? string
+        : T extends StringConfig
+          ? string | undefined
+          : T extends StringBuilder
+            ? string | undefined
+            : T extends NumberConfigWithDefault
+              ? number
+              : T extends NumberConfig
+                ? number | undefined
+                : T extends NumberBuilder
+                  ? number | undefined
+                  : T extends BooleanConfigWithDefault
+                    ? boolean
+                    : T extends BooleanConfig
+                      ? boolean | undefined
+                      : T extends BooleanBuilder
+                        ? boolean | undefined
+                        : T extends DateConfigWithDefault
+                          ? Date
+                          : T extends DateConfig
+                            ? Date | undefined
+                            : T extends DateBuilder
+                              ? Date | undefined
+                              : T extends StringArrayConfigWithDefault
+                                ? string[]
+                                : T extends StringArrayConfig
+                                  ? string[]
+                                  : T extends StringArrayBuilder
+                                    ? string[]
+                                    : T extends NumberArrayConfigWithDefault
+                                      ? number[]
+                                      : T extends NumberArrayConfig
+                                        ? number[]
+                                        : T extends NumberArrayBuilder
+                                          ? number[]
+                                          : T extends BooleanArrayConfigWithDefault
+                                            ? boolean[]
+                                            : T extends BooleanArrayConfig
+                                              ? boolean[]
+                                              : T extends BooleanArrayBuilder
+                                                ? boolean[]
+                                                : T extends DateArrayConfigWithDefault
+                                                  ? Date[]
+                                                  : T extends DateArrayConfig
+                                                    ? Date[]
+                                                    : T extends DateArrayBuilder
+                                                      ? Date[]
+                                                      : T extends StringTuple2ConfigWithDefault
+                                                        ? [string, string]
+                                                        : T extends StringTuple2Config
+                                                          ? [string, string] | undefined
+                                                          : T extends StringTuple2Builder
+                                                            ? [string, string] | undefined
+                                                            : T extends NumberTuple2ConfigWithDefault
+                                                              ? [number, number]
+                                                              : T extends NumberTuple2Config
+                                                                ? [number, number] | undefined
+                                                                : T extends NumberTuple2Builder
+                                                                  ? [number, number] | undefined
+                                                                  : T extends BooleanTuple2ConfigWithDefault
+                                                                    ? [boolean, boolean]
+                                                                    : T extends BooleanTuple2Config
+                                                                      ? [boolean, boolean] | undefined
+                                                                      : T extends BooleanTuple2Builder
+                                                                        ? [boolean, boolean] | undefined
+                                                                        : T extends DateTuple2ConfigWithDefault
+                                                                          ? [Date, Date]
+                                                                          : T extends DateTuple2Config
+                                                                            ? [Date, Date] | undefined
+                                                                            : T extends DateTuple2Builder
+                                                                              ? [Date, Date] | undefined
+                                                                              : never
 
 // Type helper to create setter function type - always accepts undefined for clearing
 type SetterType<T> = (value: T | undefined) => void
@@ -444,6 +465,12 @@ type UseQueryStateReturnType<T extends Record<string, Config>> = {
   [K in keyof T]: InferConfigType<T[K]>
 } & {
   [K in keyof T as `set${Capitalize<string & K>}`]: SetterType<InferConfigType<T[K]>>
+}
+
+export interface StringEnumBuilder<T extends string = string> {
+  type: 'stringEnum'
+  _config: Partial<StringEnumConfig<T>>
+  default(value: T): StringEnumConfigWithDefault<T>
 }
 
 export interface StringBuilder {
@@ -456,6 +483,7 @@ export interface StringBuilder {
   email(): StringBuilder
   url(): StringBuilder
   uuid(): StringBuilder
+  enum<T extends readonly string[]>(values: T): StringEnumBuilder<T[number]>
   array(): StringArrayBuilder
   tuple(length: number): StringTuple2Builder // For now, just support tuple(2)
   default(value: string): StringConfigWithDefault
@@ -585,6 +613,24 @@ export function string(): StringBuilder {
 
     uuid(): StringBuilder {
       return createBuilder({ ...config, uuid: true })
+    },
+
+    enum<T extends readonly string[]>(values: T): StringEnumBuilder<T[number]> {
+      // Create a StringEnumBuilder with the enum values
+      const createStringEnumBuilder = (
+        enumConfig: Partial<StringEnumConfig<T[number]>> = {},
+      ): StringEnumBuilder<T[number]> => ({
+        type: 'stringEnum',
+        _config: enumConfig,
+
+        default(value: T[number]): StringEnumConfigWithDefault<T[number]> {
+          return { type: 'stringEnum', allowedValues: values, defaultValue: value }
+        },
+      })
+
+      return createStringEnumBuilder({
+        allowedValues: values,
+      })
     },
 
     array(): StringArrayBuilder {
@@ -987,6 +1033,15 @@ function parseValue(rawValue: string | null, config: Config): any {
     }
 
     return defaultValue
+  }
+
+  if (config.type === 'stringEnum') {
+    // For enum, validate that the value is in the allowed values
+    const allowedValues = getConfigValue(config, 'allowedValues') as readonly string[] | undefined
+    if (!allowedValues || !allowedValues.includes(rawValue)) {
+      return defaultValue
+    }
+    return rawValue
   }
 
   if (config.type === 'string') {
@@ -1477,6 +1532,17 @@ function validateValue(value: any, config: Config): any {
     return stringValue
   }
 
+  if (config.type === 'stringEnum') {
+    const stringValue = String(value)
+    const allowedValues = getConfigValue(config, 'allowedValues') as readonly string[] | undefined
+    
+    if (!allowedValues || !allowedValues.includes(stringValue)) {
+      return defaultValue
+    }
+    
+    return stringValue
+  }
+
   if (config.type === 'number') {
     const numValue = typeof value === 'number' ? value : parseFloat(String(value))
     if (isNaN(numValue)) {
@@ -1934,6 +2000,11 @@ function serializeValue(value: any, config: Config): string | undefined {
       : String(value)
   }
 
+  if (config.type === 'stringEnum') {
+    // Serialize enum as string
+    return String(value)
+  }
+
   return String(value)
 }
 
@@ -2148,17 +2219,17 @@ export function useQueryState<T extends Record<string, Config>>(
 
 // Helper function to get config values from builder or config objects
 function getConfigValue<T>(obj: Config, key: string): T | undefined {
-  // For config objects, access directly
-  if ('defaultValue' in obj || !('min' in obj && typeof obj.min === 'function')) {
+  // For config objects (those with defaultValue or specific config structures), access directly
+  if ('defaultValue' in obj || obj.type === 'stringEnum' && !('_config' in obj)) {
     return (obj as any)[key]
   }
 
-  // For StringBuilder objects, check the _config property
+  // For builder objects, check the _config property first
   if ('_config' in obj && obj._config) {
     return (obj._config as any)[key]
   }
 
-  // For other builder objects, these properties aren't accessible - return undefined
+  // For other builder objects without _config, these properties aren't accessible - return undefined
   return undefined
 }
 
