@@ -17,6 +17,7 @@ A lightweight, type-safe React library for managing URL query parameters as appl
 - **Number Values** - Native support for numeric parameters with proper type conversion
 - **Tuple Support** - Fixed-length arrays that maintain their structure (perfect for sliders, coordinates, colors)
 - **Default Values** - Optional defaults that automatically populate the URL when parameters are missing
+- **Batched Updates** - `setMany` applies multiple parameter changes atomically in one URL update
 - **React Router Integration** - Built on React Router's useSearchParams for seamless compatibility
 - **Framework Agnostic** - Works with any UI component library that accepts string/array values
 
