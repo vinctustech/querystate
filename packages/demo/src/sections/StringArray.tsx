@@ -19,7 +19,7 @@ export function StringArray() {
     fontSize: '14px',
   }
 
-  const displayValue = (value: any) => {
+  const displayValue = (value: unknown) => {
     if (value === undefined) {
       return <span style={{ color: '#888', fontStyle: 'italic' }}>undefined</span>
     }
@@ -110,7 +110,10 @@ export function StringArray() {
         <button style={buttonStyle} onClick={() => setPriority('high')}>
           Set 'high'
         </button>
-        <button style={buttonStyle} onClick={() => setPriority('invalid' as any)}>
+        <button
+          style={buttonStyle}
+          onClick={() => setPriority('invalid' as unknown as 'low')}
+        >
           Set 'invalid' (should revert to default)
         </button>
         <button style={buttonStyle} onClick={() => setPriority(undefined)}>

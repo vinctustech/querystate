@@ -1,10 +1,8 @@
 import { qs, useQueryState } from '@vinctus/querystate'
 
 export function StringValidations() {
-  const { email, setEmail, website, setWebsite, userId, setUserId } = useQueryState({
+  const { email, setEmail } = useQueryState({
     email: qs.string().email().default('user@example.com'),
-    website: qs.string().url(),
-    userId: qs.string().uuid(),
   })
 
   const buttonStyle = {
@@ -17,7 +15,7 @@ export function StringValidations() {
     color: '#fff',
     fontSize: '14px',
   }
-  const displayValue = (value: any) =>
+  const displayValue = (value: unknown) =>
     value === undefined ? (
       <span style={{ color: '#888', fontStyle: 'italic' }}>undefined</span>
     ) : (

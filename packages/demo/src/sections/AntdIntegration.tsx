@@ -18,7 +18,7 @@ export function AntdIntegration() {
     priorities: qs.number().array().default([1, 2]),
   })
 
-  const displayValue = (value: any) => {
+  const displayValue = (value: unknown) => {
     if (value === undefined) {
       return <span style={{ color: '#888', fontStyle: 'italic' }}>undefined</span>
     }

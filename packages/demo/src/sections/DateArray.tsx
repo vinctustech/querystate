@@ -12,7 +12,7 @@ export function DateArray() {
     color: '#fff',
     fontSize: '14px',
   }
-  const displayValue = (value: any) =>
+  const displayValue = (value: unknown) =>
     value === undefined ? (
       <span style={{ color: '#888', fontStyle: 'italic' }}>undefined</span>
     ) : (

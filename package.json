@@ -1,6 +1,7 @@
 {
   "private": true,
   "name": "querystate-monorepo",
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],
@@ -8,10 +9,18 @@
     "build": "npm run build --workspace=@vinctus/querystate",
     "dev": "npm run dev --workspace=demo",
     "test": "npm run test --workspace=@vinctus/querystate",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "clean": "rm -rf node_modules && rm -rf packages/*/node_modules && rm -rf packages/*/dist",
     "publish": "npm run build && npm publish --workspace=@vinctus/querystate --access public"
   },
   "devDependencies": {
-    "typescript": "^5.7.2"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.59.3"
   }
 }

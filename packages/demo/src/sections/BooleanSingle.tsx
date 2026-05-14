@@ -17,7 +17,7 @@ export function BooleanSingle() {
     fontSize: '14px',
   }
 
-  const displayValue = (value: any) => {
+  const displayValue = (value: unknown) => {
     if (value === undefined) {
       return <span style={{ color: '#888', fontStyle: 'italic' }}>undefined</span>
     }

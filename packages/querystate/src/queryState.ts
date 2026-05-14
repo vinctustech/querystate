@@ -341,7 +341,7 @@ export type Config =
   | DateArrayConfigWithDefault
   | StringEnumConfig
   | StringEnumConfigWithDefault
-  | StringEnumBuilder<any>
+  | StringEnumBuilder<string>
   | StringTuple2Config
   | StringTuple3Config
   | StringTuple4Config
@@ -460,11 +460,18 @@ type InferConfigType<T extends Config> = T extends StringEnumConfigWithDefault<i
 // Type helper to create setter function type - always accepts undefined for clearing
 type SetterType<T> = (value: T | undefined) => void
 
+// Type helper for the batched multi-key setter
+type SetManyType<T extends Record<string, Config>> = (
+  updates: Partial<{ [K in keyof T]: InferConfigType<T[K]> | undefined }>,
+) => void
+
 // Type helper to convert schema to return type
 type UseQueryStateReturnType<T extends Record<string, Config>> = {
   [K in keyof T]: InferConfigType<T[K]>
 } & {
   [K in keyof T as `set${Capitalize<string & K>}`]: SetterType<InferConfigType<T[K]>>
+} & {
+  setMany: SetManyType<T>
 }
 
 export interface StringEnumBuilder<T extends string = string> {
@@ -1017,7 +1024,7 @@ export function date(): DateBuilder {
 }
 
 // Parse and validate values from URL
-function parseValue(rawValue: string | null, config: Config): any {
+function parseValue(rawValue: string | null, config: Config): unknown {
   const defaultValue = getDefaultValue(config)
 
   if (rawValue === null) {
@@ -1483,7 +1490,7 @@ function parseValue(rawValue: string | null, config: Config): any {
 }
 
 // Validate and process values before setting in URL
-function validateValue(value: any, config: Config): any {
+function validateValue(value: unknown, config: Config): unknown {
   const defaultValue = getDefaultValue(config)
 
   if (value === undefined || value === null) {
@@ -1609,8 +1616,6 @@ function validateValue(value: any, config: Config): any {
 
   if (config.type === 'stringArray') {
     // String array validation
-    const currentDebug = (globalThis as any).queryStateDebug || []
-    currentDebug.push(`DEBUG: validateValue stringArray input: ${JSON.stringify(value)}`)
     const arrayValue = Array.isArray(value) ? value : [String(value)]
     let validatedValue = arrayValue
       .map((item) => {
@@ -1661,8 +1666,6 @@ function validateValue(value: any, config: Config): any {
     const maxLength = getMaxLength(config)
 
     if (minLength && validatedValue.length < minLength) {
-      currentDebug.push(`DEBUG: Array too short, returning default`)
-      ;(globalThis as any).queryStateDebug = currentDebug
       return defaultValue
     }
     if (maxLength && validatedValue.length > maxLength) {
@@ -1942,7 +1945,7 @@ function validateValue(value: any, config: Config): any {
 }
 
 // Serialize values for URL
-function serializeValue(value: any, config: Config): string | undefined {
+function serializeValue(value: unknown, config: Config): string | undefined {
   if (value === undefined || value === null) {
     return undefined
   }
@@ -2008,17 +2011,11 @@ function serializeValue(value: any, config: Config): string | undefined {
   return String(value)
 }
 
-// Global debug log for sharing with UI
-let debugMessages: string[] = []
-
 // Main hook
 export function useQueryState<T extends Record<string, Config>>(
   schema: T,
 ): UseQueryStateReturnType<T> {
   const [searchParams, setSearchParams] = useSearchParams()
-
-  // Clear debug messages on each hook call
-  debugMessages = []
 
   // Check if defaults need to be applied to URL on initial load
   const needsDefaultsApplied = Object.entries(schema).some(([key, config]) => {
@@ -2032,26 +2029,14 @@ export function useQueryState<T extends Record<string, Config>>(
     const hasRegularValue = searchParams.has(key)
     const hasValue = hasArrayValue || hasRegularValue
     const hasDefault = getDefaultValue(config) !== undefined
-    debugMessages.push(
-      `DEBUG: ${key} - isArrayType: ${isArrayType}, hasArrayValue: ${hasArrayValue}, hasRegularValue: ${hasRegularValue}, hasValue: ${hasValue}, hasDefault: ${hasDefault}, defaultValue: ${JSON.stringify(getDefaultValue(config))}`,
-    )
     return !hasValue && hasDefault
   })
 
-  debugMessages.push(`DEBUG: needsDefaultsApplied: ${needsDefaultsApplied}`)
-
   // Apply defaults to URL using setTimeout to avoid calling setSearchParams during render
   if (needsDefaultsApplied) {
-    debugMessages.push(`DEBUG: Scheduling defaults to be applied to URL`)
-
-    // Capture current debug messages and search params in closure
-    const currentDebugMessages = [...debugMessages]
     const currentSearchParams = new URLSearchParams(searchParams)
 
     setTimeout(() => {
-      const timeoutDebugMessages: string[] = []
-      currentDebugMessages.forEach((msg) => timeoutDebugMessages.push(msg))
-      timeoutDebugMessages.push(`DEBUG: setTimeout - About to apply defaults to URL`)
       const paramsWithDefaults = new URLSearchParams(currentSearchParams)
 
       Object.entries(schema).forEach(([key, config]) => {
@@ -2066,15 +2051,7 @@ export function useQueryState<T extends Record<string, Config>>(
 
         if (!hasArrayValue && !hasRegularValue) {
           const defaultValue = getDefaultValue(config)
-          timeoutDebugMessages.push(
-            `DEBUG: setTimeout - Setting ${key} to default: ${JSON.stringify(defaultValue)}`,
-          )
           if (defaultValue !== undefined) {
-            const isArrayType =
-              config.type === 'stringArray' ||
-              config.type === 'numberArray' ||
-              config.type === 'booleanArray' ||
-              config.type === 'dateArray'
             if (isArrayType && Array.isArray(defaultValue)) {
               // For arrays with non-empty defaults, use param[] syntax - set multiple entries
               // Empty array defaults don't appear in URL (clean URLs)
@@ -2082,13 +2059,9 @@ export function useQueryState<T extends Record<string, Config>>(
                 defaultValue.forEach((item) => {
                   paramsWithDefaults.append(arrayKey, String(item))
                 })
-                timeoutDebugMessages.push(
-                  `DEBUG: setTimeout - Set array ${arrayKey} with ${defaultValue.length} items`,
-                )
               }
             } else {
               const serialized = serializeValue(defaultValue, config)
-              timeoutDebugMessages.push(`DEBUG: setTimeout - Serialized ${key}: ${serialized}`)
               if (serialized !== undefined) {
                 paramsWithDefaults.set(key, serialized)
               }
@@ -2097,33 +2070,25 @@ export function useQueryState<T extends Record<string, Config>>(
         }
       })
 
-      timeoutDebugMessages.push(
-        `DEBUG: setTimeout - Final params: ${paramsWithDefaults.toString()}`,
-      )
-      timeoutDebugMessages.push(`DEBUG: setTimeout - About to call setSearchParams`)
       setSearchParams(paramsWithDefaults, { replace: true })
-      timeoutDebugMessages.push(`DEBUG: setTimeout - setSearchParams called successfully`)
-
-      // Update global debug messages after the timeout
-      ;(globalThis as any).queryStateDebug = timeoutDebugMessages
     }, 0)
   }
 
-  // Add debug messages to result
-  ;(globalThis as any).queryStateDebug = debugMessages
+  const result: Record<string, unknown> = {}
 
-  const result: any = {}
-
-  // Helper to rebuild URL with only schema keys
-  const rebuildURL = (updatedKey?: string, updatedValue?: any) => {
+  // Helper to rebuild URL with only schema keys.
+  // `updates` is a map of keys (subset of schema) to new values; keys not in
+  // the map are read from the current searchParams. Pass an empty object to
+  // rebuild solely from the current URL.
+  const rebuildURL = (updates: Record<string, unknown> = {}) => {
     const newParams = new URLSearchParams()
 
     Object.entries(schema).forEach(([key, config]) => {
-      let valueToUse: any
+      let valueToUse: unknown
 
-      if (key === updatedKey) {
+      if (Object.prototype.hasOwnProperty.call(updates, key)) {
         // Use the new value being set, but validate it first
-        valueToUse = validateValue(updatedValue, config)
+        valueToUse = validateValue(updates[key], config)
       } else {
         // Use current parsed value
         let rawValue: string | null
@@ -2203,37 +2168,45 @@ export function useQueryState<T extends Record<string, Config>>(
 
     // Create setter
     const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1)
-    result[`set${capitalizedKey}`] = (newValue: any) => {
-      const currentDebug = (globalThis as any).queryStateDebug || []
-      currentDebug.push(
-        `DEBUG: Setter function called for ${key} with: ${JSON.stringify(newValue)}`,
-      )
-      ;(globalThis as any).queryStateDebug = currentDebug
-      const newParams = rebuildURL(key, newValue)
+    result[`set${capitalizedKey}`] = (newValue: unknown) => {
+      const newParams = rebuildURL({ [key]: newValue })
       setSearchParams(newParams)
     }
   })
 
-  return result
+  // Batched multi-key setter: applies every update in a single setSearchParams
+  // call so updates don't clobber each other when called synchronously.
+  result.setMany = (updates: Record<string, unknown>) => {
+    const filtered: Record<string, unknown> = {}
+    Object.keys(updates).forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(schema, key)) {
+        filtered[key] = updates[key]
+      }
+    })
+    const newParams = rebuildURL(filtered)
+    setSearchParams(newParams)
+  }
+
+  return result as UseQueryStateReturnType<T>
 }
 
 // Helper function to get config values from builder or config objects
 function getConfigValue<T>(obj: Config, key: string): T | undefined {
   // For config objects (those with defaultValue or specific config structures), access directly
-  if ('defaultValue' in obj || obj.type === 'stringEnum' && !('_config' in obj)) {
-    return (obj as any)[key]
+  if ('defaultValue' in obj || (obj.type === 'stringEnum' && !('_config' in obj))) {
+    return (obj as unknown as Record<string, T>)[key]
   }
 
   // For builder objects, check the _config property first
   if ('_config' in obj && obj._config) {
-    return (obj._config as any)[key]
+    return (obj._config as unknown as Record<string, T>)[key]
   }
 
   // For other builder objects without _config, these properties aren't accessible - return undefined
   return undefined
 }
 
-function getDefaultValue(config: Config): any {
+function getDefaultValue(config: Config): unknown {
   return getConfigValue(config, 'defaultValue')
 }
 

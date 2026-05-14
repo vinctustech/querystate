@@ -1,10 +1,9 @@
 import { qs, useQueryState } from '@vinctus/querystate'
 
 export function StringTransformations() {
-  const { username, setUsername, displayName, setDisplayName, code, setCode } = useQueryState({
+  const { username, setUsername, displayName, setDisplayName } = useQueryState({
     username: qs.string().min(3).max(20).lowercase().default('user123'),
     displayName: qs.string().min(2).max(30).uppercase(),
-    code: qs.string().uppercase(),
   })
 
   const buttonStyle = {
@@ -17,7 +16,7 @@ export function StringTransformations() {
     color: '#fff',
     fontSize: '14px',
   }
-  const displayValue = (value: any) =>
+  const displayValue = (value: unknown) =>
     value === undefined ? (
       <span style={{ color: '#888', fontStyle: 'italic' }}>undefined</span>
     ) : (

@@ -19,7 +19,7 @@ export function StringSingle() {
     fontSize: '14px',
   }
 
-  const displayValue = (value: any) => {
+  const displayValue = (value: unknown) => {
     if (value === undefined) {
       return <span style={{ color: '#888', fontStyle: 'italic' }}>undefined</span>
     }
@@ -91,7 +91,10 @@ export function StringSingle() {
         <button style={buttonStyle} onClick={() => setGranularity('month')}>
           Set 'month'
         </button>
-        <button style={buttonStyle} onClick={() => setGranularity('invalid' as any)}>
+        <button
+          style={buttonStyle}
+          onClick={() => setGranularity('invalid' as unknown as 'day')}
+        >
           Set 'invalid' (should revert to default)
         </button>
         <button style={buttonStyle} onClick={() => setGranularity(undefined)}>
@@ -114,7 +117,10 @@ export function StringSingle() {
         <button style={buttonStyle} onClick={() => setStatus('completed')}>
           Set 'completed'
         </button>
-        <button style={buttonStyle} onClick={() => setStatus('invalid' as any)}>
+        <button
+          style={buttonStyle}
+          onClick={() => setStatus('invalid' as unknown as 'pending')}
+        >
           Set 'invalid' (should become undefined)
         </button>
         <button style={buttonStyle} onClick={() => setStatus(undefined)}>

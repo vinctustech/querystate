@@ -15,6 +15,7 @@ import { DateSingle } from './sections/DateSingle'
 import { DateArray } from './sections/DateArray'
 import { DateTuple } from './sections/DateTuple'
 import { AntdIntegration } from './sections/AntdIntegration'
+import { SetMany } from './sections/SetMany'
 
 const sections = [
   { id: 'string-single', name: 'String - Single', path: '/string-single', component: StringSingle },
@@ -58,6 +59,7 @@ const sections = [
     path: '/antd-integration',
     component: AntdIntegration,
   },
+  { id: 'set-many', name: 'setMany', path: '/set-many', component: SetMany },
 ] as const
 
 function Navigation() {
