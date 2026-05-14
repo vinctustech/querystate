@@ -114,6 +114,35 @@ function FilterComponent() {
 }
 ```
 
+## Batched Updates with `setMany`
+
+Each per-key setter (`setPage`, `setRole`, etc.) updates exactly one URL parameter. Calling two of them in the same event handler does **not** compose — each setter rebuilds the URL from the same stale snapshot of `searchParams`, so the second call clobbers the first.
+
+```tsx
+const { page, setPage, role, setRole, setMany } = useQueryState({
+  page: queryState.number().default(1),
+  role: queryState.string().enum(['ADMIN', 'USER']),
+});
+
+// ❌ Broken — second call overwrites the first.
+// If page was 2 and role was undefined, you end up with page=2, role=ADMIN
+// (the setPage(1) is lost).
+const onFilterChange = () => {
+  setPage(1);
+  setRole('ADMIN');
+};
+
+// ✅ Use setMany to apply multiple updates atomically.
+const onFilterChange = () => {
+  setMany({ page: 1, role: 'ADMIN' });
+};
+
+// Pass `undefined` to clear a parameter.
+setMany({ role: undefined, storeId: undefined, page: 1 });
+```
+
+`setMany` accepts a partial map of schema keys to new values, validates each value against its config, and writes the combined result in a single URL update. Keys not present in the map keep their current value; unknown keys are silently ignored.
+
 ## Parameter Types
 
 Here's what each parameter type returns based on whether it has a default value:
