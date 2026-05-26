@@ -4,9 +4,9 @@ export function SetMany() {
   const { page, setPage, role, setRole, storeId, setStoreId, tab, setTab, setMany } = useQueryState(
     {
       page: qs.number().default(1),
-      role: qs.string().enum(['DISPATCHER', 'DRIVER', 'ADMIN', 'OWNER', 'BILLING'] as const),
+      role: qs.string().enum(['DISPATCHER', 'DRIVER', 'ADMIN', 'OWNER', 'BILLING']),
       storeId: qs.string(),
-      tab: qs.string().enum(['active', 'deactivated'] as const).default('active'),
+      tab: qs.string().enum(['active', 'deactivated']).default('active'),
     },
   )
 

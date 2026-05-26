@@ -4,7 +4,7 @@ export function StringArray() {
   const { categories, setCategories, tags, setTags, priority, setPriority, sizes, setSizes } = useQueryState({
     categories: qs.string().array(),
     tags: qs.string().array().default(['react', 'typescript']),
-    priority: qs.string().enum(['low', 'medium', 'high'] as const).default('medium'),
+    priority: qs.string().enum(['low', 'medium', 'high']).default('medium'),
     sizes: qs.string().array().default(['small', 'medium']),
   })
 

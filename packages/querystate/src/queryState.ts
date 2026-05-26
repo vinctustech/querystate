@@ -490,7 +490,7 @@ export interface StringBuilder {
   email(): StringBuilder
   url(): StringBuilder
   uuid(): StringBuilder
-  enum<T extends readonly string[]>(values: T): StringEnumBuilder<T[number]>
+  enum<const T extends readonly string[]>(values: T): StringEnumBuilder<T[number]>
   array(): StringArrayBuilder
   tuple(length: number): StringTuple2Builder // For now, just support tuple(2)
   default(value: string): StringConfigWithDefault
@@ -622,7 +622,7 @@ export function string(): StringBuilder {
       return createBuilder({ ...config, uuid: true })
     },
 
-    enum<T extends readonly string[]>(values: T): StringEnumBuilder<T[number]> {
+    enum<const T extends readonly string[]>(values: T): StringEnumBuilder<T[number]> {
       // Create a StringEnumBuilder with the enum values
       const createStringEnumBuilder = (
         enumConfig: Partial<StringEnumConfig<T[number]>> = {},

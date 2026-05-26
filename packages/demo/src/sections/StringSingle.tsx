@@ -4,8 +4,8 @@ export function StringSingle() {
   const { category, setCategory, name, setName, granularity, setGranularity, status, setStatus } = useQueryState({
     category: qs.string(),
     name: qs.string().default('John'),
-    granularity: qs.string().enum(['day', 'week', 'month'] as const).default('day'),
-    status: qs.string().enum(['pending', 'active', 'completed'] as const),
+    granularity: qs.string().enum(['day', 'week', 'month']).default('day'),
+    status: qs.string().enum(['pending', 'active', 'completed']),
   })
 
   const buttonStyle = {
